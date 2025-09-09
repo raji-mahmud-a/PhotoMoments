@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PhotoMoments</title>
   <link rel="stylesheet" href="/css/main.css">
- <script src="/js/app.js" type="text/javascript" charset="utf-8"></script>
+  <script src="/js/app.js" type="text/javascript" charset="utf-8"></script>
 </head>
 
 <body>
@@ -18,10 +18,16 @@
     <aside>
       <select name="year" id="yearSelect">
       </select>
+      <select name="month" id="monthSelect">
+        <option value="">Select Month</option>
+      </select>
     </aside>
     <article class="Gallerywrapper">
       <div id="GallerywrapperGrid">
-        <div class="gridImageItem"></div>
+      </div>
+      <div id="GallerywrapperNotFound" hidden>
+        <h1>No moments captured yet</h1>
+        <button class="btn addNewMoment Primarybtn">Add new Moment</button>
       </div>
     </article>
   </main>
