@@ -86,6 +86,14 @@ body {
 @media (max-width: 900px) {
   .month-bar { display: none; }
   #monthSelect { display: block; margin-top: 12px; }
+  
+  *{
+    --fs-h1: 1.75rem;
+  }
+  
+  .btn{
+    padding: var(--space-sm);
+  }
 }
 
 @media (min-width: 901px) {
