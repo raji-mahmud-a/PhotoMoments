@@ -78,51 +78,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // placeholder: fetch or filter photos for selected year
     rebuildGrid(); // re-create sample grid for demonstration
   });
+  
+  let ImageData = {}
 
   // Utility to create sample images with randomized spans
-  function createGridItems(count = 12) {
-    galleryGrid.innerHTML = '';
-    for (let i = 1; i <= count; i++) {
-      const div = document.createElement('div');
-      div.className = 'gridImageItem';
-      // Create image element
-      const img = document.createElement('img');
-      img.src = `https://picsum.photos/400/600?random=${Math.floor(Math.random()*1000) + i}`;
-      img.alt = `Image ${i}`;
-      // compute a random span - biased distribution: more small, some tall
-      const rand = Math.random();
-      let span;
-      if (rand < 0.6) span = 12 + Math.floor(Math.random()*8);    // short-medium (12-19 rows)
-      else if (rand < 0.9) span = 20 + Math.floor(Math.random()*16); // medium-long (20-35 rows)
-      else span = 36 + Math.floor(Math.random()*24); // tall (36-59 rows)
-      // Set grid-row-end to span N
-      div.style.gridRowEnd = `span ${span}`;
-      // attach image
-      div.appendChild(img);
-      galleryGrid.appendChild(div);
-    }
-  }
-
-  // Rebuild grid (example entry point)
-  function rebuildGrid() {
-    // optionally use yearSelect.value and monthSelect.value for filtering when data available
-    createGridItems(14 + Math.floor(Math.random()*8));
-    // optional: apply small reveal animation
-    requestAnimationFrame(()=> {
-      galleryGrid.querySelectorAll('.gridImageItem').forEach((el, idx) => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(8px)';
-        setTimeout(() => {
-          el.style.transition = 'opacity .45s ease, transform .45s ease';
-          el.style.opacity = '1';
-          el.style.transform = 'translateY(0)';
-        }, 40 * idx);
-      });
-    });
-  }
-
-  // initial population
-  rebuildGrid();
+  
 
   // Optional: reflow on window resize to ensure layout looks good
   let resizeTimer;

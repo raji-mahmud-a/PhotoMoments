@@ -1,0 +1,38 @@
+
+/* container for masonry grid */
+#GallerywrapperGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-auto-rows: 12px; /* baseline row height used when computing spans */
+  gap: 16px;
+  width: 100%;height: 100%;
+  padding: var(--space-md);
+  overflow-y: scroll;
+}
+
+#GallerywrapperGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(1fr, 300px));
+  gap: var(--space-md);
+  grid-auto-rows: min-content;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  #GallerywrapperGrid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-sm);
+  }
+}
+
+
+/* Empty State Styling */
+#GallerywrapperGrid:empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  background-color: var(--color-bg-light);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
