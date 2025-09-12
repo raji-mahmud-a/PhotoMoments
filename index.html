@@ -5,6 +5,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PhotoMoments</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link rel="preload" as="font" type="font/woff2" href="https://fonts.gstatic.com/s/materialsymbolsoutlined/v161/kJEhBvYX7BgnkSrUwT8OhrdQoLEgI5bM2Jp1TozL3tHn-K1w.woff2" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+
   <link rel="stylesheet" href="/css/main.css">
 </head>
 
@@ -34,16 +41,32 @@
   
   <div id="photoModal" class="modal-overlay" aria-modal="true" role="dialog" hidden>
     <div class="modal-content">
-        <button id="modalCloseBtn" class="modal-close-btn" aria-label="Close modal">&times;</button>
+        <button id="modalCloseBtn" class="btn Primarybtn modal-close-btn" aria-label="Close modal">&times;</button>
         <div class="modal-body">
+            <div class="loader"></div>
             <img id="modalImage" class="modal-image" src="" alt="Full-size photo">
             <div class="modal-text-content">
                 <p id="modalDate" class="modal-date"></p>
                 <p id="modalStory" class="modal-story"></p>
             </div>
+            <div class="modalButtons">
+              <button class="btn Primarybtn " onclick="navigatePhotos('prev')"><span class="material-symbols-outlined">
+                arrow_back
+            </span>
+            Previous</button>
+              
+<button class="btn Primarybtn" onclick="navigatePhotos('next')">
+  Next
+            <span class="material-symbols-outlined">
+                arrow_forward
+            </span>
+</button>
+
+            </div>
         </div>
     </div>
 </div>
+
 
   <script src="js/app.js"></script>
 </body>

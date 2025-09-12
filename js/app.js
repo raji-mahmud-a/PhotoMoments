@@ -1,6 +1,6 @@
 // ===================================================
-// PhotoMoments - Day 3 Complete JavaScript
-// Dynamic Photo Gallery with Month/Year Navigation
+// PhotoMoments - Day 4 Complete JavaScript
+// Dynamic Photo Gallery with Month/Year Navigation and Modal
 // ===================================================
 
 // ===================================================
@@ -19,7 +19,11 @@ const modalImage = document.getElementById('modalImage');
 const modalDate = document.getElementById('modalDate');
 const modalStory = document.getElementById('modalStory');
 const modalCloseBtn = document.getElementById('modalCloseBtn');
+const modalBody = document.querySelector('.modal-body'); // The main body of the modal
 
+// Global variables for tracking state
+let currentPhotoIndex = 0;
+let currentFilteredPhotos = [];
 
 // ===================================================
 // 2. UTILITY FUNCTIONS
@@ -27,19 +31,49 @@ const modalCloseBtn = document.getElementById('modalCloseBtn');
 
 /**
  * Function to handle "Add Memory" button clicks
- * This will be expanded in Day 6 with actual upload functionality
  */
 const addNewMoment = () => {
     console.log('Add Memory feature coming soon! 🥹🥹');
     alert('Photo upload functionality will be added in Day 6!');
 }
 
+/**
+ * Closes the photo modal and restores body scrolling
+ */
+const closeModal = () => {
+    photoModal.classList.remove('visible');
+    photoModal.hidden = true;
+    document.body.style.overflow = ''; // Restores body scrolling
+    console.log('Modal closed');
+};
+
+/**
+ * Navigate to the next or previous photo in the gallery.
+ * @param {string} direction - 'next' or 'prev'
+ */
+const navigatePhotos = (direction) => {
+    if (currentFilteredPhotos.length <= 1) return; // Do nothing if there's only one or no photo
+
+    let newIndex = currentPhotoIndex;
+    if (direction === 'next') {
+        newIndex = (currentPhotoIndex + 1) % currentFilteredPhotos.length;
+    } else if (direction === 'prev') {
+        // Use a trick to handle negative modulo: (a % n + n) % n
+        newIndex = (currentPhotoIndex - 1 + currentFilteredPhotos.length) % currentFilteredPhotos.length;
+    }
+
+    const nextPhoto = currentFilteredPhotos[newIndex];
+    if (nextPhoto) {
+        handlePhotoClick(nextPhoto.id);
+    }
+    
+};
+
 // ===================================================
 // 3. SAMPLE PHOTO DATA
 // ===================================================
 
 // Sample photos for testing the gallery
-// In Day 6, this will be replaced with Firebase data
 const samplePhotos = [
     {
         id: 1,
@@ -120,89 +154,77 @@ const samplePhotos = [
 /**
  * Main function to render the photo gallery based on selected year and month
  * This is the heart of the application - it filters and displays photos
- * 
- * @param {number|string} year - The selected year (e.g., 2024)
+ * * @param {number|string} year - The selected year (e.g., 2024)
  * @param {number|string} month - The selected month (1-12)
  */
 const renderGrid = (year, month) => {
     console.log(`Rendering gallery for Year: ${year}, Month: ${month}`);
     
-    // Clear any previously displayed photos
-    galleryGrid.innerHTML = '';
-  
-    // Ensure month is in two-digit format (01, 02, etc.)
-    // This is needed because our monthYear format is "YYYY-MM"
-    const formattedMonth = String(month).padStart(2, '0');
+    // Show the loader and hide the gallery grid immediately
+    galleryGridNotFound.hidden = true;
+    galleryGrid.innerHTML = '<div class="loader"></div>';
+    galleryGrid.hidden = false;
     
-    // Filter photos that match the selected year and month
-    const filteredPhotos = samplePhotos.filter(photo => {
-        return photo.monthYear === `${year}-${formattedMonth}`;
-    });
-    
-    console.log(`Found ${filteredPhotos.length} photos for ${year}-${formattedMonth}`);
-  
-    // Check if we found any photos
-    if (filteredPhotos.length === 0) {
-        // No photos found - show empty state
-        galleryGrid.hidden = true;              // Hide the photo grid
-        galleryGridNotFound.hidden = false;     // Show "no photos" message
-        console.log('No photos found for this month/year');
-    } else {
-        // Photos found - display them
+    // Simulate a network delay for demonstration purposes
+    setTimeout(() => {
+        // Ensure month is in two-digit format (01, 02, etc.)
+        const formattedMonth = String(month).padStart(2, '0');
         
-        // Create HTML elements for each photo
-        filteredPhotos.forEach(photo => {
-            // Create the main photo card container
-            const photoElement = document.createElement('div');
-            photoElement.className = 'photo-card';
-            
-            // Add data attributes for identification and interaction
-            photoElement.setAttribute("data-photo-id", `${photo.id}`);
-            photoElement.id = "photoCard";
-            
-            // Format the date for display
-            // Convert "2024-01-15" to "January 15, 2024"
-            const dateObj = new Date(photo.date);
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            const formattedDate = dateObj.toLocaleDateString('en-US', options);
-            
-            // Create the HTML structure for the photo card
-            // This includes the image and hover overlay with date/story
-            photoElement.innerHTML = `
-                <img src="${photo.src}" alt="A photo from ${photo.date}" loading="lazy">
-                <div class="photo-overlay">
-                    <div class="photo-date">${formattedDate}</div>
-                    <div class="photo-story">${photo.story}</div>
-                </div>
-            `;
-            
-            // Add click event listener to the photo card
-            // When clicked, it will show the full story (tomorrow we'll add modal)
-            photoElement.addEventListener('click', function() {
-                handlePhotoClick(photo.id);
-            });
-            
-            // Add the photo card to the gallery grid
-            galleryGrid.appendChild(photoElement);
+        // Filter photos that match the selected year and month
+        const filteredPhotos = samplePhotos.filter(photo => {
+            return photo.monthYear === `${year}-${formattedMonth}`;
         });
         
-        // Show the gallery grid and hide empty state
-        galleryGrid.hidden = false;
-        galleryGridNotFound.hidden = true;
-        console.log(`Successfully rendered ${filteredPhotos.length} photos`);
-    }
+        // Update the global filtered photos array
+        currentFilteredPhotos = filteredPhotos;
+        
+        // Clear the loader
+        galleryGrid.innerHTML = '';
+
+        // Check if we found any photos
+        if (filteredPhotos.length === 0) {
+            // No photos found - show empty state
+            galleryGrid.hidden = true;              
+            galleryGridNotFound.hidden = false;     
+            console.log('No photos found for this month/year');
+        } else {
+            // Photos found - display them
+            filteredPhotos.forEach(photo => {
+                const photoElement = document.createElement('div');
+                photoElement.className = 'photo-card';
+                photoElement.setAttribute("data-photo-id", `${photo.id}`);
+                
+                const dateObj = new Date(photo.date);
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                const formattedDate = dateObj.toLocaleDateString('en-US', options);
+                
+                photoElement.innerHTML = `
+                    <img src="${photo.src}" alt="A photo from ${photo.date}" loading="lazy">
+                    <div class="photo-overlay">
+                        <div class="photo-date">${formattedDate}</div>
+                        <div class="photo-story">${photo.story}</div>
+                    </div>
+                `;
+                
+                // Add click event listener to the photo card
+                photoElement.addEventListener('click', function() {
+                    handlePhotoClick(photo.id);
+                });
+                
+                galleryGrid.appendChild(photoElement);
+            });
+            
+            galleryGrid.hidden = false;
+            galleryGridNotFound.hidden = true;
+            console.log(`Successfully rendered ${filteredPhotos.length} photos`);
+        }
+    }, 500); // 500ms delay to simulate loading
 };
 
 /**
  * Handle when a photo is clicked
- * Currently shows an alert, tomorrow this will open a modal
- * 
- * @param {number} photoId - The ID of the clicked photo
- */
-/**
- * Handle when a photo is clicked
  * Now opens a modal with the full photo and story
- * * @param {number} photoId - The ID of the clicked photo
+ * @param {number} photoId - The ID of the clicked photo
  */
 function handlePhotoClick(photoId) {
     console.log(`Photo with ID ${photoId} was clicked`);
@@ -211,6 +233,17 @@ function handlePhotoClick(photoId) {
     const photo = samplePhotos.find(p => p.id === photoId);
     
     if (photo) {
+        // Show loading state and hide the image
+        modalBody.classList.add('loading');
+        
+        // Find the index of the clicked photo within the filtered list
+        currentPhotoIndex = currentFilteredPhotos.findIndex(p => p.id === photoId);
+        
+        // When the image is done loading, hide the loader
+        modalImage.onload = () => {
+            modalBody.classList.remove('loading');
+        };
+        
         // Populate modal with photo data
         modalImage.src = photo.src;
         modalImage.alt = `Photo from ${photo.date}`;
@@ -234,33 +267,6 @@ function handlePhotoClick(photoId) {
         console.error(`Photo with ID ${photoId} not found`);
     }
 }
-
-/**
- * Closes the photo modal and restores body scrolling
- */
-const closeModal = () => {
-    photoModal.classList.remove('visible');
-    photoModal.hidden = true
-    document.body.style.overflow = ''; // Restores body scrolling
-    console.log('Modal closed');
-};
-
-// New: Add event listeners for the modal
-modalCloseBtn.addEventListener('click', closeModal);
-
-// Close modal if user clicks outside of the content
-photoModal.addEventListener('click', (e) => {
-    if (e.target === photoModal) {
-        closeModal();
-    }
-});
-
-// Close modal if user presses the Escape key
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && photoModal.classList.contains('visible')) {
-        closeModal();
-    }
-});
 
 
 // ===================================================
@@ -330,14 +336,12 @@ months.forEach((monthName, index) => {
 /**
  * Set which month is currently active/selected
  * Updates both desktop pills and mobile dropdown to stay in sync
- * 
- * @param {number|string} m - Month number (1-12)
+ * * @param {number|string} m - Month number (1-12)
  */
 const setActiveMonth = (m) => {
     console.log(`Setting active month to: ${m}`);
     
     // Update desktop month pills
-    // Remove 'active' class from all pills, add it to the selected one
     monthBar.querySelectorAll('.month-pill').forEach(pill => {
         if (Number(pill.dataset.month) === Number(m)) {
             pill.classList.add('active');
@@ -359,19 +363,13 @@ setActiveMonth(currentMonth);
 
 // Handle clicking on desktop month pills
 monthBar.addEventListener('click', (e) => {
-    // Find the clicked pill (if any)
     const pill = e.target.closest('.month-pill');
-    if (!pill) return; // User clicked outside of a pill
+    if (!pill) return; 
     
     console.log(`Month pill clicked: ${pill.dataset.month}`);
     
-    // Set the clicked month as active
     setActiveMonth(pill.dataset.month);
-    
-    // Render the gallery with the new month selection
     renderGrid(yearSelect.value, pill.dataset.month);
-    
-    // Smooth scroll the clicked pill into view (useful on narrow screens)
     pill.scrollIntoView({behavior:'smooth', inline:'center'});
 });
 
@@ -379,10 +377,7 @@ monthBar.addEventListener('click', (e) => {
 monthSelect.addEventListener('change', (e) => {
     console.log(`Month select changed to: ${e.target.value}`);
     
-    // Update the active month display
     setActiveMonth(e.target.value);
-    
-    // Render the gallery with the new selection
     renderGrid(yearSelect.value, monthSelect.value);
 });
 
@@ -390,8 +385,6 @@ monthSelect.addEventListener('change', (e) => {
 yearSelect.addEventListener('change', (e) => {
     console.log(`Year select changed to: ${e.target.value}`);
     
-    // Render the gallery with the new year selection
-    // Keep the same month that was previously selected
     renderGrid(yearSelect.value, monthSelect.value);
 });
 
@@ -401,27 +394,21 @@ yearSelect.addEventListener('change', (e) => {
 
 /**
  * Update navigation UI based on screen size
- * Desktop (>900px): Shows month pills
- * Mobile (<=900px): Shows month dropdown
  */
 function updateMonthUI() {
     if (window.matchMedia('(max-width:900px)').matches) {
-        // Mobile view
-        monthSelect.style.display = 'block';  // Show month dropdown
-        monthBar.style.display = 'none';      // Hide month pills
+        monthSelect.style.display = 'block'; 
+        monthBar.style.display = 'none';     
         console.log('Switched to mobile navigation');
     } else {
-        // Desktop view  
-        monthSelect.style.display = 'none';   // Hide month dropdown
-        monthBar.style.display = 'flex';      // Show month pills
+        monthSelect.style.display = 'none';  
+        monthBar.style.display = 'flex';     
         console.log('Switched to desktop navigation');
     }
 }
 
-// Run responsive check when page loads
+// Run responsive check when page loads and when screen size changes
 updateMonthUI();
-
-// Run responsive check when screen size changes
 window.matchMedia('(max-width:900px)').addEventListener('change', updateMonthUI);
 
 // ===================================================
@@ -430,10 +417,9 @@ window.matchMedia('(max-width:900px)').addEventListener('change', updateMonthUI)
 
 /**
  * Initialize the gallery when the page loads
- * This ensures we show photos for the current month/year by default
  */
 window.addEventListener('DOMContentLoaded', () => {
-    console.log('PhotoMoments Day 3 - Initializing...');
+    console.log('PhotoMoments Day 4 - Initializing...');
     console.log(`Default view: Year ${yearSelect.value}, Month ${currentMonth}`);
     
     // Set month dropdown to current month
@@ -442,16 +428,42 @@ window.addEventListener('DOMContentLoaded', () => {
     // Render the gallery with current year and month
     renderGrid(yearSelect.value, currentMonth);
     
-    console.log('PhotoMoments Day 3 - Initialization complete! 📸');
-    console.log('Features working: Month navigation, photo filtering, responsive design');
-    console.log('Coming tomorrow: Modal system for full photo viewing');
+    console.log('PhotoMoments Day 4 - Initialization complete! 📸');
 });
 
 // ===================================================
 // 12. ADDITIONAL EVENT LISTENERS
 // ===================================================
 
-// Add click listener to "Add Memory" button if it exists
+// Modal close button listener
+modalCloseBtn.addEventListener('click', closeModal);
+
+// Close modal if user clicks outside of the content
+photoModal.addEventListener('click', (e) => {
+    if (e.target === photoModal) {
+        closeModal();
+    }
+});
+
+// Close modal if user presses the Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && photoModal.classList.contains('visible')) {
+        closeModal();
+    }
+});
+
+// Add event listeners for arrow key navigation
+document.addEventListener('keydown', (e) => {
+    if (photoModal.classList.contains('visible')) {
+        if (e.key === 'ArrowRight') {
+            navigatePhotos('next');
+        } else if (e.key === 'ArrowLeft') {
+            navigatePhotos('prev');
+        }
+    }
+});
+
+// Add click listener to "Add Memory" button
 document.addEventListener('DOMContentLoaded', () => {
     const addMemoryBtn = document.querySelector('.add-memory-btn');
     if (addMemoryBtn) {
@@ -477,7 +489,6 @@ function debugPhotoMoments() {
     console.log('Month Bar:', monthBar);
     console.log('Sample Photos:', samplePhotos);
     
-    // Count photos by month/year
     const currentSelection = `${yearSelect.value}-${String(monthSelect.value).padStart(2, '0')}`;
     const filteredCount = samplePhotos.filter(p => p.monthYear === currentSelection).length;
     console.log(`Photos for current selection (${currentSelection}):`, filteredCount);
@@ -487,11 +498,3 @@ function debugPhotoMoments() {
 
 // Make debug function available globally
 window.debugPhotoMoments = debugPhotoMoments;
-
-// ===================================================
-// END OF DAY 3 JAVASCRIPT
-// ===================================================
-
-console.log('📸 PhotoMoments Day 3 JavaScript loaded successfully!');
-console.log('✅ Features: Dynamic gallery, month/year navigation, responsive design');
-console.log('🔜 Tomorrow: Modal system for full-screen photo viewing');
