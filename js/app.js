@@ -13,6 +13,14 @@ const monthSelect = document.getElementById('monthSelect');      // Month dropdo
 const galleryGrid = document.getElementById('GallerywrapperGrid');  // Container for photo grid
 const galleryGridNotFound = document.getElementById('GallerywrapperNotFound'); // Empty state container
 
+// New: Modal element references
+const photoModal = document.getElementById('photoModal');
+const modalImage = document.getElementById('modalImage');
+const modalDate = document.getElementById('modalDate');
+const modalStory = document.getElementById('modalStory');
+const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+
 // ===================================================
 // 2. UTILITY FUNCTIONS
 // ===================================================
@@ -191,6 +199,11 @@ const renderGrid = (year, month) => {
  * 
  * @param {number} photoId - The ID of the clicked photo
  */
+/**
+ * Handle when a photo is clicked
+ * Now opens a modal with the full photo and story
+ * * @param {number} photoId - The ID of the clicked photo
+ */
 function handlePhotoClick(photoId) {
     console.log(`Photo with ID ${photoId} was clicked`);
     
@@ -198,18 +211,57 @@ function handlePhotoClick(photoId) {
     const photo = samplePhotos.find(p => p.id === photoId);
     
     if (photo) {
+        // Populate modal with photo data
+        modalImage.src = photo.src;
+        modalImage.alt = `Photo from ${photo.date}`;
+        
         // Format the date nicely
         const dateObj = new Date(photo.date);
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         const formattedDate = dateObj.toLocaleDateString('en-US', options);
+        modalDate.textContent = formattedDate;
         
-        // Show photo details in an alert (temporary - will be modal tomorrow)
-        const message = `Photo from ${formattedDate}\n\n${photo.story}`;
-        alert(message);
+        // Set the story content
+        modalStory.textContent = photo.story;
+        
+        // Show the modal
+        photoModal.classList.add('visible');
+        photoModal.removeAttribute('hidden');
+        document.body.style.overflow = 'hidden'; // Prevents scrolling on the body
+        
+        console.log(`Modal populated and visible for photo ID: ${photoId}`);
     } else {
         console.error(`Photo with ID ${photoId} not found`);
     }
 }
+
+/**
+ * Closes the photo modal and restores body scrolling
+ */
+const closeModal = () => {
+    photoModal.classList.remove('visible');
+    photoModal.hidden = true
+    document.body.style.overflow = ''; // Restores body scrolling
+    console.log('Modal closed');
+};
+
+// New: Add event listeners for the modal
+modalCloseBtn.addEventListener('click', closeModal);
+
+// Close modal if user clicks outside of the content
+photoModal.addEventListener('click', (e) => {
+    if (e.target === photoModal) {
+        closeModal();
+    }
+});
+
+// Close modal if user presses the Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && photoModal.classList.contains('visible')) {
+        closeModal();
+    }
+});
+
 
 // ===================================================
 // 5. MONTH NAVIGATION SETUP

@@ -22,13 +22,14 @@
 
 /* Button Styling */
 .btn {
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-sm) var(--space-sm);
   border-radius: var(--radius-md);
   font-weight: 600;
   transition: all var(--transition-smooth);
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
+  font-size: var(--fs-body);
 }
 
 .Primarybtn {

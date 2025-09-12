@@ -32,12 +32,18 @@
     </article>
   </main>
   
-  
-  
-  
-    </main>
-
-  <script src="js/data/sample-data.js"></script>
+  <div id="photoModal" class="modal-overlay" aria-modal="true" role="dialog" hidden>
+    <div class="modal-content">
+        <button id="modalCloseBtn" class="modal-close-btn" aria-label="Close modal">&times;</button>
+        <div class="modal-body">
+            <img id="modalImage" class="modal-image" src="" alt="Full-size photo">
+            <div class="modal-text-content">
+                <p id="modalDate" class="modal-date"></p>
+                <p id="modalStory" class="modal-story"></p>
+            </div>
+        </div>
+    </div>
+</div>
 
   <script src="js/app.js"></script>
 </body>
