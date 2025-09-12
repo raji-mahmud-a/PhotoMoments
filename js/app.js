@@ -66,86 +66,31 @@ const navigatePhotos = (direction) => {
     if (nextPhoto) {
         handlePhotoClick(nextPhoto.id);
     }
-    
 };
 
 // ===================================================
-// 3. SAMPLE PHOTO DATA
+// 3. GET USER PHOTOS
 // ===================================================
 
-// Sample photos for testing the gallery
-const samplePhotos = [
-    {
-        id: 1,
-        src: 'https://picsum.photos/400/300?random=1',
-        date: '2024-01-15',
-        story: 'Perfect sunset at the beach with friends. The colors were absolutely incredible and we stayed until the stars came out.',
-        monthYear: '2024-01'  // Used for filtering by month/year
-    },
-    {
-        id: 2,
-        src: 'https://picsum.photos/400/500?random=2',
-        date: '2024-01-22',
-        story: 'Morning coffee ritual. These quiet moments before the day begins are so precious to me.',
-        monthYear: '2024-01'
-    },
-    {
-        id: 3,
-        src: 'https://picsum.photos/400/350?random=3',
-        date: '2024-02-03',
-        story: 'Adventure in the mountains! The view from the top was worth every step of the challenging hike.',
-        monthYear: '2024-02'
-    },
-    {
-        id: 4,
-        src: 'https://picsum.photos/400/400?random=4',
-        date: '2024-02-14',
-        story: 'Valentine\'s dinner at home. Sometimes the simple moments are the most romantic.',
-        monthYear: '2024-02'
-    },
-    {
-        id: 5,
-        src: 'https://picsum.photos/400/280?random=5',
-        date: '2024-02-20',
-        story: 'Rainy day reading session. Found a cozy corner and lost myself in a great book.',
-        monthYear: '2024-02'
-    },
-    {
-        id: 6,
-        src: 'https://picsum.photos/400/450?random=6',
-        date: '2024-03-05',
-        story: 'First flowers of spring! Nature is waking up and everything feels full of possibility.',
-        monthYear: '2024-03'
-    },
-    {
-        id: 7,
-        src: 'https://picsum.photos/400/320?random=7',
-        date: '2024-03-12',
-        story: 'Weekend farmers market visit. Fresh produce and the best people watching in town.',
-        monthYear: '2024-03'
-    },
-    {
-        id: 8,
-        src: 'https://picsum.photos/400/380?random=8',
-        date: '2024-03-18',
-        story: 'Late night city lights from the rooftop. The city never sleeps and neither do the dreamers.',
-        monthYear: '2024-03'
-    },
-    {
-        id: 9,
-        src: 'https://picsum.photos/400/360?random=9',
-        date: '2024-12-10',
-        story: 'Holiday lights downtown. The magic of December never gets old.',
-        monthYear: '2024-12'
-    },
-    {
-        id: 10,
-        src: 'https://picsum.photos/400/420?random=10',
-        date: '2024-12-25',
-        story: 'Christmas morning joy. Family, presents, and pure happiness all around.',
-        monthYear: '2024-12'
+// This function will get the photos from Supabase.
+// It assumes `currentUser` and `userPhotos` are available globally.
+function getCurrentUserPhotos() {
+    if (!currentUser) return [];
+    return userPhotos || [];
+}
+
+// Check if user is logged in when page loads
+document.addEventListener('DOMContentLoaded', async function() {
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (!session?.user) {
+        console.log('No user session, redirecting to login...')
+        window.location.href = 'login.html'
+        return
     }
-];
+    
+    console.log('User authenticated:', session.user.email)
+})
 
 // ===================================================
 // 4. MAIN GALLERY RENDERING FUNCTION
@@ -160,77 +105,80 @@ const samplePhotos = [
 const renderGrid = (year, month) => {
     console.log(`Rendering gallery for Year: ${year}, Month: ${month}`);
     
-    // Show the loader and hide the gallery grid immediately
-    galleryGridNotFound.hidden = true;
-    galleryGrid.innerHTML = '<div class="loader"></div>';
-    galleryGrid.hidden = false;
+    // Check if user is logged in
+    if (!currentUser) {
+        console.log('User not logged in, redirecting...');
+        window.location.href = 'login.html';
+        return;
+    }
     
-    // Simulate a network delay for demonstration purposes
-    setTimeout(() => {
-        // Ensure month is in two-digit format (01, 02, etc.)
-        const formattedMonth = String(month).padStart(2, '0');
-        
-        // Filter photos that match the selected year and month
-        const filteredPhotos = samplePhotos.filter(photo => {
-            return photo.monthYear === `${year}-${formattedMonth}`;
-        });
-        
-        // Update the global filtered photos array
-        currentFilteredPhotos = filteredPhotos;
-        
-        // Clear the loader
-        galleryGrid.innerHTML = '';
-
-        // Check if we found any photos
-        if (filteredPhotos.length === 0) {
-            // No photos found - show empty state
-            galleryGrid.hidden = true;              
-            galleryGridNotFound.hidden = false;     
-            console.log('No photos found for this month/year');
-        } else {
-            // Photos found - display them
-            filteredPhotos.forEach(photo => {
-                const photoElement = document.createElement('div');
-                photoElement.className = 'photo-card';
-                photoElement.setAttribute("data-photo-id", `${photo.id}`);
-                
-                const dateObj = new Date(photo.date);
-                const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                const formattedDate = dateObj.toLocaleDateString('en-US', options);
-                
-                photoElement.innerHTML = `
-                    <img src="${photo.src}" alt="A photo from ${photo.date}" loading="lazy">
-                    <div class="photo-overlay">
-                        <div class="photo-date">${formattedDate}</div>
-                        <div class="photo-story">${photo.story}</div>
-                    </div>
-                `;
-                
-                // Add click event listener to the photo card
-                photoElement.addEventListener('click', function() {
-                    handlePhotoClick(photo.id);
-                });
-                
-                galleryGrid.appendChild(photoElement);
+    // Clear any previously displayed photos
+    galleryGrid.innerHTML = '';
+    
+    // Get photos from Supabase instead of sample data
+    const allPhotos = getCurrentUserPhotos();
+    const formattedMonth = String(month).padStart(2, '0');
+    
+    // Filter photos that match the selected year and month
+    const filteredPhotos = allPhotos.filter(photo => {
+        // The month_year property is now based on Supabase data
+        return photo.month_year === `${year}-${formattedMonth}`;
+    });
+    
+    console.log(`Found ${filteredPhotos.length} photos for ${year}-${formattedMonth}`);
+    
+    // Update the global filtered photos array
+    currentFilteredPhotos = filteredPhotos;
+    
+    if (filteredPhotos.length === 0) {
+        // No photos found - show empty state
+        galleryGrid.hidden = true;
+        galleryGridNotFound.hidden = false;
+    } else {
+        // Photos found - display them
+        filteredPhotos.forEach(photo => {
+            const photoElement = document.createElement('div');
+            photoElement.className = 'photo-card';
+            
+            photoElement.setAttribute("data-photo-id", `${photo.id}`);
+            photoElement.id = "photoCard";
+            
+            // Format the date for display
+            const dateObj = new Date(photo.photo_date);
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const formattedDate = dateObj.toLocaleDateString('en-US', options);
+            
+            photoElement.innerHTML = `
+                <img src="${photo.photo_url}" alt="A photo from ${photo.photo_date}" loading="lazy">
+                <div class="photo-overlay">
+                    <div class="photo-date">${formattedDate}</div>
+                    <div class="photo-story">${photo.story || 'No story yet...'}</div>
+                </div>
+            `;
+            
+            // Add click event listener
+            photoElement.addEventListener('click', function() {
+                handlePhotoClick(photo.id);
             });
             
-            galleryGrid.hidden = false;
-            galleryGridNotFound.hidden = true;
-            console.log(`Successfully rendered ${filteredPhotos.length} photos`);
-        }
-    }, 500); // 500ms delay to simulate loading
-};
+            galleryGrid.appendChild(photoElement);
+        });
+        
+        galleryGrid.hidden = false;
+        galleryGridNotFound.hidden = true;
+    }
+}
 
 /**
  * Handle when a photo is clicked
  * Now opens a modal with the full photo and story
- * @param {number} photoId - The ID of the clicked photo
+ * @param {string} photoId - The ID of the clicked photo from Supabase
  */
 function handlePhotoClick(photoId) {
     console.log(`Photo with ID ${photoId} was clicked`);
     
-    // Find the photo data by ID
-    const photo = samplePhotos.find(p => p.id === photoId);
+    // Find the photo data by ID from the global userPhotos array
+    const photo = userPhotos.find(p => p.id === photoId);
     
     if (photo) {
         // Show loading state and hide the image
@@ -245,17 +193,17 @@ function handlePhotoClick(photoId) {
         };
         
         // Populate modal with photo data
-        modalImage.src = photo.src;
-        modalImage.alt = `Photo from ${photo.date}`;
+        modalImage.src = photo.photo_url; // Use photo_url from Supabase
+        modalImage.alt = `Photo from ${photo.photo_date}`; // Use photo_date
         
         // Format the date nicely
-        const dateObj = new Date(photo.date);
+        const dateObj = new Date(photo.photo_date);
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         const formattedDate = dateObj.toLocaleDateString('en-US', options);
         modalDate.textContent = formattedDate;
         
         // Set the story content
-        modalStory.textContent = photo.story;
+        modalStory.textContent = photo.story || 'No story added yet.';
         
         // Show the modal
         photoModal.classList.add('visible');
@@ -364,7 +312,7 @@ setActiveMonth(currentMonth);
 // Handle clicking on desktop month pills
 monthBar.addEventListener('click', (e) => {
     const pill = e.target.closest('.month-pill');
-    if (!pill) return; 
+    if (!pill) return;
     
     console.log(`Month pill clicked: ${pill.dataset.month}`);
     
@@ -397,12 +345,12 @@ yearSelect.addEventListener('change', (e) => {
  */
 function updateMonthUI() {
     if (window.matchMedia('(max-width:900px)').matches) {
-        monthSelect.style.display = 'block'; 
-        monthBar.style.display = 'none';     
+        monthSelect.style.display = 'block';
+        monthBar.style.display = 'none';
         console.log('Switched to mobile navigation');
     } else {
-        monthSelect.style.display = 'none';  
-        monthBar.style.display = 'flex';     
+        monthSelect.style.display = 'none';
+        monthBar.style.display = 'flex';
         console.log('Switched to desktop navigation');
     }
 }
@@ -484,13 +432,13 @@ function debugPhotoMoments() {
     console.log('=== PhotoMoments Debug Info ===');
     console.log('Current Year:', yearSelect.value);
     console.log('Current Month:', monthSelect.value);
-    console.log('Total Photos:', samplePhotos.length);
+    console.log('Total Photos:', userPhotos.length);
     console.log('Gallery Container:', galleryGrid);
     console.log('Month Bar:', monthBar);
-    console.log('Sample Photos:', samplePhotos);
+    console.log('User Photos:', userPhotos);
     
     const currentSelection = `${yearSelect.value}-${String(monthSelect.value).padStart(2, '0')}`;
-    const filteredCount = samplePhotos.filter(p => p.monthYear === currentSelection).length;
+    const filteredCount = userPhotos.filter(p => p.month_year === currentSelection).length;
     console.log(`Photos for current selection (${currentSelection}):`, filteredCount);
     
     console.log('========================');
