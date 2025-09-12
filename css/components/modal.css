@@ -1,0 +1,161 @@
+/* ===============================
+   MODAL OVERLAY AND CONTAINER
+   =============================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===============================
+   MODAL CONTENT STYLING
+   =============================== */
+.modal-content {
+  position: relative;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 0;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(-50px);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-overlay.visible .modal-content {
+  transform: translateY(0);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--space-md);
+  gap: var(--space-md);
+}
+
+/* ===============================
+   MODAL IMAGE AND TEXT
+   =============================== */
+.modal-image {
+  width: 100%;
+  height: auto;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  display: block;
+}
+
+.modal-text-content {
+  padding: 0 var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.modal-date {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: var(--fs-body);
+}
+
+.modal-story {
+  line-height: 1.6;
+  font-size: var(--fs-body);
+}
+
+/* ===============================
+   CLOSE BUTTON STYLING
+   =============================== */
+.modal-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--color-text-inverse);
+  border: 3px solid var(--color-text-inverse);
+  border-radius: 8px;
+  cursor: pointer;
+  line-height: 1;
+  opacity: 0.8;
+  background-color:var(--color-primary);
+  padding: var(--space-xs);
+  transition: opacity 0.2s ease;
+  z-index: 101;
+}
+
+.modal-close-btn:hover {
+  opacity: 1;
+}
+
+/* ===============================
+   MOBILE RESPONSIVENESS
+   =============================== */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+  }
+}
+/* Add loader styling to the existing file */
+
+.loader {
+    border: 4px solid var(--color-border);
+    border-top: 4px solid var(--color-primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.modal-body.loading .modal-image {
+    display: none;
+}
+
+.modal-body.loading .loader {
+    display: block;
+}
+.modal-body .loader{
+  display:none;
+}
+
+
+.noMorePhotoForModal{
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.modalButtons{
+  display: flex;
+  align-items: space-between;
+  justify-content: space-between;
+  padding: var(--space-md);
+  width: 100%;
+}
