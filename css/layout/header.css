@@ -51,11 +51,11 @@
   display: flex;
   gap: var(--space-sm);
   align-items: flex-end;
-  flex-direction: column;
+  flex-direction: row;
   width: max-content;
   
   .btn{
-    width: 100%;
+    width: fit-content;
     text-align: center;
     display: flex;
     align-items:center ;
@@ -66,6 +66,12 @@
 
 .header{
   padding: var(--space-sm) var(--space-lg);
+  display: flex;
+  justify-content: center;
+  gap:var(--space-lg);
+  align-items: center;
+  flex-direction: column;
+  
 }
 }
 
