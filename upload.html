@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Memory - PhotoMoments</title>
+    <link rel="stylesheet" href="css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <header class="header">
+        <h1 class="HeaderText">PhotoMoments</h1>
+        <nav class="headerButtonsContainer">
+            <a href="index.html" class="btn Primarybtn">← Back to Gallery</a>
+            <button id="logoutBtn" class="btn Primarybtn">Log Out</button>
+        </nav>
+    </header>
+
+    <div class="upload-container">
+        <div class="upload-card">
+            <h2>Add a New Memory</h2>
+            <p>Upload a photo and tell its story</p>
+            
+            <form id="uploadForm" class="upload-form">
+                <div class="photo-upload-section">
+                    <div id="dropZone" class="drop-zone">
+                        <div class="drop-zone-content">
+                            <div class="upload-icon">📷</div>
+                            <p class="drop-zone-text">Drag and drop a photo here</p>
+                            <p class="drop-zone-or">or</p>
+                            <button type="button" id="selectFileBtn" class="select-file-btn">Choose Photo</button>
+                            <input type="file" id="photoInput" accept="image/*" hidden>
+                        </div>
+                        
+                        <div id="photoPreview" class="photo-preview hidden">
+                            <img id="previewImage" src="" alt="Preview">
+                            <button type="button" id="removePhoto" class="remove-photo-btn">&times;</button>
+                        </div>
+                        
+                        <div id="uploadProgress" class="upload-progress hidden">
+                            <div class="progress-bar">
+                                <div id="progressFill" class="progress-fill"></div>
+                            </div>
+                            <p id="progressText">Uploading...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="photo-details-section">
+                    <div class="form-group">
+                        <label for="photoDate">When was this photo taken?</label>
+                        <input type="date" id="photoDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="photoStory">Tell the story of this moment</label>
+                        <textarea 
+                            id="photoStory" 
+                            placeholder="What made this moment special? Who was there? What happened?"
+                            rows="4"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="cancelBtn" class="cancel-btn">Cancel</button>
+                        <button type="submit" id="saveBtn" class="save-btn" disabled>
+                            <span class="btn-text">Save Memory</span>
+                            <span class="btn-loading hidden">Saving...</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+            
+            <div id="uploadMessage" class="upload-message hidden"></div>
+        </div>
+    </div>
+    
+    <script src="js/supabase-config.js"></script>
+    <script src="js/upload.js"></script>
+</body>
+</html>
