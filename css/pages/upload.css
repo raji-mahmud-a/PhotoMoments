@@ -1,9 +1,12 @@
 /* Upload Page Styles */
 .upload-container {
-    max-width: 800px;
+    width: 750px;
     margin: 2rem auto;
+    margin-top: 4rem;
     padding: 0 1rem;
 }
+
+
 
 .upload-card {
     background: var(--color-surface);
@@ -296,6 +299,7 @@
     .upload-container {
         margin: var(--space-lg) auto;
         padding: 0 var(--space-xs);
+        width: 100%;
     }
     
     .upload-card {

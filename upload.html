@@ -5,14 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Memory - PhotoMoments</title>
     <link rel="stylesheet" href="css/main.css">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link rel="preload" as="font" type="font/woff2" href="https://fonts.gstatic.com/s/materialsymbolsoutlined/v161/kJEhBvYX7BgnkSrUwT8OhrdQoLEgI5bM2Jp1TozL3tHn-K1w.woff2" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <header class="header">
         <h1 class="HeaderText">PhotoMoments</h1>
         <nav class="headerButtonsContainer">
-            <a href="index.html" class="btn Primarybtn">← Back to Gallery</a>
-            <button id="logoutBtn" class="btn Primarybtn">Log Out</button>
+            <a href="index.html" class="btn Primarybtn"><span class="material-symbols-outlined">
+    arrow_back
+</span> Back to Gallery</a>
+            <button id="logoutBtn" class="btn Primarybtn">Log Out<span class="material-symbols-outlined">
+logout
+</span></button>
         </nav>
     </header>
 

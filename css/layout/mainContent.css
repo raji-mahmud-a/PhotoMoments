@@ -15,9 +15,6 @@ body {
   gap: 8px;
   align-items: stretch;
   padding: 8px 4px;
-  max-height: 360px;       /* visible column height */
-  overflow-y: auto;        /* vertical scroll */
-  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   width: 160px;            /* sidebar-like width */
 }
