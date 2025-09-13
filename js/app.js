@@ -32,10 +32,13 @@ let currentFilteredPhotos = [];
 /**
  * Function to handle "Add Memory" button clicks
  */
+
+// Update your addNewMoment function
 const addNewMoment = () => {
-    console.log('Add Memory feature coming soon! 🥹🥹');
-    alert('Photo upload functionality will be added in Day 6!');
+    console.log('Redirecting to upload page...')
+    window.location.href = 'upload.html'
 }
+
 
 /**
  * Closes the photo modal and restores body scrolling
@@ -443,6 +446,18 @@ function debugPhotoMoments() {
     
     console.log('========================');
 }
+
+// Add to your DOMContentLoaded event listener
+document.getElementById('logoutBtn')?.addEventListener('click', async function() {
+    try {
+        console.log('Logging out...')
+        await supabase.auth.signOut()
+        window.location.href = 'login.html'
+    } catch (error) {
+        console.error('Logout error:', error)
+        window.location.href = 'login.html'
+    }
+})
 
 // Make debug function available globally
 window.debugPhotoMoments = debugPhotoMoments;
