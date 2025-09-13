@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupDropZone()
     selectFileBtn.addEventListener('click', () => photoInput.click())
     photoInput.addEventListener('change', handleFileSelect)
-    removePhotoBtn.addEventListener('click', removeSelectedPhoto)
+    removePhotoBtn.addEventListener('click', removeSelectedPhoto())
     uploadForm.addEventListener('submit', handleFormSubmit)
     cancelBtn.addEventListener('click', () => window.location.href = 'index.html')
     logoutBtn.addEventListener('click', handleLogout)
@@ -296,7 +296,7 @@ async function savePhotoToSupabase(photoFile, photoData) {
         
         // Upload photo to storage
         const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('photos')
+            .from('Photos')
             .upload(fileName, photoFile)
         
         if (uploadError) {
@@ -309,14 +309,14 @@ async function savePhotoToSupabase(photoFile, photoData) {
         
         // Get public URL for the uploaded photo
         const { data: urlData } = supabase.storage
-            .from('photos')
+            .from('Photos')
             .getPublicUrl(fileName)
         
         const photoUrl = urlData.publicUrl
         
         // Save photo metadata to database
         const { data: dbData, error: dbError } = await supabase
-            .from('photos')
+            .from('Photos')
             .insert({
                 user_id: currentUser.id,
                 photo_url: photoUrl,

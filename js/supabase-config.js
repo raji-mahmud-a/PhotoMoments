@@ -10,7 +10,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
 
 // Global variables for current user
-let currentUser = null
+//let currentUser = null
 let userPhotos = []
 
 // Initialize auth state listener
@@ -50,7 +50,7 @@ async function loadUserPhotos() {
         console.log('Loading photos for user:', currentUser.id)
         
         const { data, error } = await supabase
-            .from('photos')
+            .from('Photos')  // ← CHANGED: Capital P
             .select('*')
             .eq('user_id', currentUser.id)
             .order('photo_date', { ascending: false })
@@ -92,7 +92,7 @@ async function savePhotoToSupabase(photoFile, photoData) {
         
         // Upload photo to storage
         const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('photos')
+            .from('Photos')  // Storage bucket name stays lowercase
             .upload(fileName, photoFile)
         
         if (uploadError) {
@@ -101,14 +101,14 @@ async function savePhotoToSupabase(photoFile, photoData) {
         
         // Get public URL for the uploaded photo
         const { data: urlData } = supabase.storage
-            .from('photos')
+            .from('Photos')  // Storage bucket name stays lowercase
             .getPublicUrl(fileName)
         
         const photoUrl = urlData.publicUrl
         
         // Save photo metadata to database
         const { data: dbData, error: dbError } = await supabase
-            .from('photos')
+            .from('Photos')  // ← CHANGED: Capital P for table name
             .insert({
                 user_id: currentUser.id,
                 photo_url: photoUrl,
