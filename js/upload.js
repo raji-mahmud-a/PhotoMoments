@@ -29,25 +29,65 @@ document.addEventListener('DOMContentLoaded', function() {
     setupDropZone()
     selectFileBtn.addEventListener('click', () => photoInput.click())
     photoInput.addEventListener('change', handleFileSelect)
-    removePhotoBtn.addEventListener('click', removeSelectedPhoto())
+    removePhotoBtn.addEventListener('click', removeSelectedPhoto)
     uploadForm.addEventListener('submit', handleFormSubmit)
     cancelBtn.addEventListener('click', () => window.location.href = 'index.html')
     logoutBtn.addEventListener('click', handleLogout)
 })
 
+// small sleep helper used by the auth check
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 async function checkAuthAndInitialize() {
     try {
         const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!session?.user) {
-            console.log('No user session, redirecting to login...')
-            window.location.href = 'login.html'
+        console.log('Initial session check (upload):', session)
+
+        // If a session exists, proceed normally
+        if (session?.user) {
+            currentUser = session.user
+            console.log('User authenticated:', currentUser.email)
+            // continue init of app (if you have other init steps call them here)
             return
         }
-        
-        currentUser = session.user
-        console.log('User authenticated:', currentUser.email)
-        
+
+        // If no session, wait briefly and listen for auth changes before redirecting.
+        // This avoids immediate redirect when the user has just signed in and the session is still being established.
+        console.log('No session at startup - waiting briefly for session establishment')
+
+        let sessionFound = false
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, st) => {
+            console.log('Auth state change (upload):', event, st)
+            if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && st?.user) {
+                sessionFound = true
+                currentUser = st.user
+                try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
+                console.log('Session established via auth listener:', currentUser.email)
+            }
+        })
+
+        // Poll for session for a short window (2s)
+        let waited = 0
+        while (waited < 2000 && !sessionFound) {
+            await sleep(200)
+            waited += 200
+            const { data: s } = await supabase.auth.getSession()
+            if (s?.session?.user) {
+                sessionFound = true
+                currentUser = s.session.user
+                try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
+                console.log('Session found via polling:', currentUser.email)
+                break
+            }
+        }
+
+        if (!sessionFound) {
+            console.log('No session detected after short wait, redirecting to login.')
+            window.location.href = 'login.html'
+        }
     } catch (error) {
         console.error('Auth check error:', error)
         window.location.href = 'login.html'
@@ -296,7 +336,7 @@ async function savePhotoToSupabase(photoFile, photoData) {
         
         // Upload photo to storage
         const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('Photos')
+            .from('photos')
             .upload(fileName, photoFile)
         
         if (uploadError) {
@@ -309,14 +349,14 @@ async function savePhotoToSupabase(photoFile, photoData) {
         
         // Get public URL for the uploaded photo
         const { data: urlData } = supabase.storage
-            .from('Photos')
+            .from('photos')
             .getPublicUrl(fileName)
         
         const photoUrl = urlData.publicUrl
         
         // Save photo metadata to database
         const { data: dbData, error: dbError } = await supabase
-            .from('Photos')
+            .from('photos')
             .insert({
                 user_id: currentUser.id,
                 photo_url: photoUrl,
