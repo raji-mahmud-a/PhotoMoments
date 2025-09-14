@@ -114,7 +114,9 @@ body {
   width: 100%;
   display: flex;
   justify-content: center;
+  flex-direction: row;
   align-items: center;
+  gap: var(--space-md);
   position: relative;
   overflow: hidden;
 }
@@ -131,8 +133,12 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-.button-loading {
-  animation: spin 1s linear infinite;
+.button-loading{display: flex;
+  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-md);
+  font-size: var(--fs-h3);
 }
 
 /* Auth Message */
@@ -143,6 +149,7 @@ body {
   font-size: var(--fs-subtext);
   font-weight: 500;
 }
+
 
 .auth-message.error {
   background-color: color-mix(in srgb, var(--color-error) 20%, transparent);

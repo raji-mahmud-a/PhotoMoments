@@ -6,7 +6,11 @@
     <title>Login - PhotoMoments</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/pages/auth.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- React Toastify CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.min.css">
+
+<!-- React Toastify JS -->
+<script src="https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/react-toastify.min.js"></script>    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="auth-container">
@@ -33,7 +37,11 @@
                 </div>
                 <button type="submit" class="auth-button" id="loginButton">
                     <span class="button-text">Sign In</span>
-                    <span class="button-loading hidden">Signing in...</span>
+                    <span class="button-loading hidden">
+                        <div class="loader">
+                            
+                        </div>
+                        Signing in...</span>
                 </button>
             </form>
             
