@@ -1,0 +1,215 @@
+/* ===================================================
+   React Toastify Custom Styling for PhotoMoments
+   =================================================== */
+
+/* Toast Container */
+.Toastify__toast-container {
+    width: 400px;
+    padding: 0;
+}
+
+/* Base Toast Styles */
+.Toastify__toast {
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-size: 14px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    border: none;
+    min-height: 64px;
+}
+
+/* Success Toast */
+.toast-success {
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
+.toast-progress-success {
+    background: #10b981;
+}
+
+/* Error Toast */
+.toast-error {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+.toast-progress-error {
+    background: #ef4444;
+}
+
+/* Warning Toast */
+.toast-warning {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    color: #92400e;
+    border-left: 4px solid #f59e0b;
+}
+
+.toast-progress-warning {
+    background: #f59e0b;
+}
+
+/* Info Toast */
+.toast-info {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    color: #1e40af;
+    border-left: 4px solid #3b82f6;
+}
+
+.toast-progress-info {
+    background: #3b82f6;
+}
+
+/* Loading Toast */
+.toast-loading {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    color: #334155;
+    border-left: 4px solid #64748b;
+}
+
+/* Progress Bar Styling */
+.Toastify__progress-bar {
+    height: 3px;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Close Button */
+.Toastify__close-button {
+    color: inherit;
+    opacity: 0.6;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 0;
+    margin: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Toastify__close-button:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+/* Toast Icons (you can add custom icons here) */
+.Toastify__toast::before {
+    content: '';
+    display: inline-block;
+    margin-right: 12px;
+    font-size: 18px;
+    vertical-align: middle;
+}
+
+.toast-success::before {
+    content: '✅';
+}
+
+.toast-error::before {
+    content: '❌';
+}
+
+.toast-warning::before {
+    content: '⚠️';
+}
+
+.toast-info::before {
+    content: 'ℹ️';
+}
+
+.toast-loading::before {
+    content: '⏳';
+}
+
+/* Animation Enhancements */
+.Toastify__toast--success {
+    animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.Toastify__toast--error {
+    animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes slideInRight {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .Toastify__toast-container {
+        width: 100vw;
+        padding: 0 12px;
+        left: 0;
+        right: 0;
+        margin: 0;
+    }
+    
+    .Toastify__toast {
+        border-radius: 8px;
+        margin-bottom: 8px;
+        padding: 14px 16px;
+        min-height: 56px;
+        font-size: 13px;
+    }
+}
+
+/* Dark Mode Support (for future) */
+@media (prefers-color-scheme: dark) {
+    .toast-success {
+        background: linear-gradient(135deg, #022c22 0%, #064e3b 100%);
+        color: #a7f3d0;
+    }
+    
+    .toast-error {
+        background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);
+        color: #fca5a5;
+    }
+    
+    .toast-warning {
+        background: linear-gradient(135deg, #451a03 0%, #92400e 100%);
+        color: #fcd34d;
+    }
+    
+    .toast-info {
+        background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+        color: #93c5fd;
+    }
+}
+
+/* Hover Effects */
+.Toastify__toast:hover {
+    transform: scale(1.02);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom Toast with Rich Content */
+.toast-rich-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.toast-message {
+    font-size: 13px;
+    opacity: 0.9;
+    line-height: 1.4;
+}

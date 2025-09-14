@@ -20,7 +20,6 @@ let progressInterval = null
 // ===================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📤 Upload page loaded')
     
     // Check user authentication before proceeding
     checkAuthAndInitialize()
@@ -46,25 +45,18 @@ async function checkAuthAndInitialize() {
     try {
         // First, check if there's an existing session
         const { data: { session } } = await supabase.auth.getSession()
-        console.log('🔐 Initial session check (upload):', session?.user?.email || 'No session')
 
         // If session exists, set current user and proceed
         if (session?.user) {
             currentUser = session.user
-            console.log('✅ User authenticated:', currentUser.email)
             return
         }
 
         // If no session, wait briefly for session establishment
-        // This prevents immediate redirect when user just signed in
-        console.log('⏳ No session at startup - waiting for session establishment')
-
         let sessionFound = false
 
         // Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, authSession) => {
-            console.log('🔄 Auth state change (upload):', event, authSession?.user?.email || 'No user')
-            
             if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && authSession?.user) {
                 sessionFound = true
                 currentUser = authSession.user
@@ -73,10 +65,8 @@ async function checkAuthAndInitialize() {
                 try { 
                     subscription?.unsubscribe?.() 
                 } catch (e) { 
-                    console.warn('⚠️ Error unsubscribing from auth listener:', e)
+                    /* ignore */
                 }
-                
-                console.log('✅ Session established via auth listener:', currentUser.email)
             }
         })
 
@@ -98,23 +88,19 @@ async function checkAuthAndInitialize() {
                 try { 
                     subscription?.unsubscribe?.() 
                 } catch (e) { 
-                    console.warn('⚠️ Error unsubscribing from auth listener:', e)
+                    /* ignore */
                 }
-                
-                console.log('✅ Session found via polling:', currentUser.email)
                 break
             }
         }
 
         // If no session found after waiting, redirect to login
         if (!sessionFound) {
-            console.log('❌ No session detected after waiting, redirecting to login')
             window.location.href = 'login.html'
         }
 
     } catch (error) {
-        console.error('❌ Auth check error:', error)
-        showMessage('Authentication error. Please try logging in again.', 'error')
+        window.showToast.error('Authentication error. Please try logging in again.');
         setTimeout(() => {
             window.location.href = 'login.html'
         }, 2000)
@@ -141,8 +127,7 @@ function initializeUploadInterface() {
     
     // Validate required elements exist
     if (!dropZone || !photoInput || !uploadForm) {
-        console.error('❌ Required DOM elements not found')
-        showMessage('Page loading error. Please refresh the page.', 'error')
+        window.showToast.error('Page loading error. Please refresh the page.');
         return
     }
     
@@ -177,8 +162,6 @@ function initializeUploadInterface() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout)
     }
-    
-    console.log('🎯 Upload interface initialized')
 }
 
 // ===================================================
@@ -192,7 +175,6 @@ function setupDropZone() {
     const dropZone = document.getElementById('dropZone')
     
     if (!dropZone) {
-        console.warn('⚠️ Drop zone not found')
         return
     }
     
@@ -218,8 +200,6 @@ function setupDropZone() {
     
     // Handle dropped files
     dropZone.addEventListener('drop', handleDrop, false)
-    
-    console.log('🎯 Drop zone setup complete')
 }
 
 /**
@@ -258,7 +238,6 @@ function handleDrop(e) {
     const files = dt.files
     
     if (files.length > 0) {
-        console.log('📁 File dropped:', files[0].name)
         handleFile(files[0])
     }
 }
@@ -269,7 +248,6 @@ function handleDrop(e) {
 function handleFileSelect(e) {
     const files = e.target.files
     if (files.length > 0) {
-        console.log('📁 File selected:', files[0].name)
         handleFile(files[0])
     }
 }
@@ -283,24 +261,17 @@ function handleFileSelect(e) {
  * @param {File} file - The selected file to process
  */
 function handleFile(file) {
-    console.log('🔍 Processing file:', {
-        name: file.name,
-        size: file.size,
-        type: file.type
-    })
     
     // Validate file type - must be an image
     if (!file.type.startsWith('image/')) {
-        console.error('❌ Invalid file type:', file.type)
-        showMessage('Please select an image file (JPG, PNG, GIF, etc.)', 'error')
+        window.showToast.error('Please select an image file (JPG, PNG, GIF, etc.)');
         return
     }
     
     // Validate file size - maximum 10MB
     const maxSize = 10 * 1024 * 1024 // 10MB in bytes
     if (file.size > maxSize) {
-        console.error('❌ File too large:', file.size, 'bytes')
-        showMessage('File is too large. Please select an image under 10MB', 'error')
+        window.showToast.error('File is too large. Please select an image under 10MB');
         return
     }
     
@@ -326,7 +297,6 @@ function generateFilePreview(file) {
         
         if (previewImage && e.target.result) {
             previewImage.src = e.target.result
-            console.log('✅ Preview generated')
         }
         
         // Update UI to show preview
@@ -345,8 +315,7 @@ function generateFilePreview(file) {
     }
     
     reader.onerror = function() {
-        console.error('❌ Error reading file')
-        showMessage('Error reading file. Please try again.', 'error')
+        window.showToast.error('Error reading file. Please try again.');
     }
     
     // Start reading the file
@@ -357,7 +326,6 @@ function generateFilePreview(file) {
  * Remove selected photo and reset UI
  */
 function removeSelectedPhoto() {
-    console.log('🗑️ Removing selected photo')
     
     // Clear selected file
     selectedFile = null
@@ -384,8 +352,6 @@ function removeSelectedPhoto() {
     if (saveBtn) {
         saveBtn.disabled = true
     }
-    
-    console.log('✅ Photo removed and UI reset')
 }
 
 // ===================================================
@@ -399,23 +365,21 @@ function removeSelectedPhoto() {
 async function handleFormSubmit(e) {
     e.preventDefault()
     
-    console.log('📝 Form submission started')
-    
     // Check if file is selected
     if (!selectedFile) {
-        showMessage('Please select a photo to upload', 'error')
+        window.showToast.error('Please select a photo to upload');
         return
     }
     
     // Prevent multiple simultaneous uploads
     if (isUploading) {
-        console.log('⚠️ Upload already in progress')
+        window.showToast.warning('Upload already in progress...');
         return
     }
     
     // Validate user authentication
     if (!currentUser) {
-        showMessage('Please log in to upload photos', 'error')
+        window.showToast.error('Please log in to upload photos');
         setTimeout(() => {
             window.location.href = 'login.html'
         }, 2000)
@@ -428,7 +392,7 @@ async function handleFormSubmit(e) {
     
     // Validate required fields
     if (!photoDate) {
-        showMessage('Please select a date for this photo', 'error')
+        window.showToast.error('Please select a date for this photo');
         return
     }
     
@@ -439,44 +403,35 @@ async function handleFormSubmit(e) {
         monthYear: photoDate.substring(0, 7) // Extract "YYYY-MM" format
     }
     
-    console.log('📋 Upload data prepared:', {
-        file: selectedFile.name,
-        date: photoData.date,
-        storyLength: photoData.story.length,
-        monthYear: photoData.monthYear
-    })
-    
     // Start upload process
     isUploading = true
-    showUploadProgress()
+    const uploadToastId = window.showToast.loading('📤 Uploading your memory...')
     
     try {
+        window.showToast.update(uploadToastId, 'loading', '🔄 Processing your photo...');
         const savedPhoto = await savePhotoToSupabase(selectedFile, photoData)
-        console.log('✅ Photo upload completed successfully:', savedPhoto.id)
         
-        showMessage('Memory saved successfully! 🎉', 'success')
+        window.showToast.update(uploadToastId, 'success', '✨ Memory saved successfully! Redirecting to your gallery...', { autoClose: 3000 });
+        
+        // Show additional success info
+        const getMonthName = (monthYear) => {
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthNum = parseInt(monthYear.split('-')[1]) - 1;
+            return months[monthNum];
+        };
+        window.showToast.success(`📅 Added to ${getMonthName(photoData.monthYear)} ${photoData.date.split('-')[0]}`, { autoClose: 2000, delay: 500 });
         
         // Redirect to main page after successful upload
         setTimeout(() => {
             window.location.href = 'index.html'
-        }, 2000)
+        }, 2500)
         
     } catch (error) {
-        console.error('❌ Upload failed:', error)
+        window.showToast.update(uploadToastId, 'error', '❌ Failed to save memory. Please try again.');
         
-        // Provide more specific error messages
-        let errorMessage = 'Failed to save memory. Please try again.'
-        
-        if (error.message?.includes('Storage')) {
-            errorMessage = 'Storage error. Please check your internet connection and try again.'
-        } else if (error.message?.includes('auth')) {
-            errorMessage = 'Authentication error. Please log in again.'
-        } else if (error.message?.includes('size')) {
-            errorMessage = 'File size too large. Please choose a smaller image.'
+        if (error.message) {
+            window.showToast.error(error.message, { autoClose: 6000, delay: 1000 });
         }
-        
-        showMessage(errorMessage, 'error')
-        hideUploadProgress()
         
     } finally {
         isUploading = false
@@ -484,117 +439,7 @@ async function handleFormSubmit(e) {
 }
 
 // ===================================================
-// UPLOAD PROGRESS AND UI FEEDBACK
-// ===================================================
-
-/**
- * Show upload progress overlay with animated progress bar
- */
-function showUploadProgress() {
-    const uploadProgress = document.getElementById('uploadProgress')
-    const saveBtn = document.getElementById('saveBtn')
-    const progressFill = document.getElementById('progressFill')
-    
-    // Show progress overlay
-    if (uploadProgress) {
-        uploadProgress.classList.remove('hidden')
-    }
-    
-    // Update button state
-    if (saveBtn) {
-        saveBtn.classList.add('loading')
-        saveBtn.disabled = true
-    }
-    
-    // Animate progress bar
-    if (progressFill) {
-        let progress = 0
-        progressInterval = setInterval(() => {
-            progress += Math.random() * 10 + 2 // Random progress between 2-12%
-            
-            if (progress >= 85) {
-                clearInterval(progressInterval)
-                progressFill.style.width = '85%'
-            } else {
-                progressFill.style.width = progress + '%'
-            }
-        }, 200)
-    }
-    
-    console.log('📊 Upload progress started')
-}
-
-/**
- * Hide upload progress overlay and reset UI
- */
-function hideUploadProgress() {
-    const uploadProgress = document.getElementById('uploadProgress')
-    const saveBtn = document.getElementById('saveBtn')
-    const progressFill = document.getElementById('progressFill')
-    const progressText = document.getElementById('progressText')
-    
-    // Hide progress overlay
-    if (uploadProgress) {
-        uploadProgress.classList.add('hidden')
-    }
-    
-    // Reset button state
-    if (saveBtn) {
-        saveBtn.classList.remove('loading')
-        saveBtn.disabled = selectedFile ? false : true
-    }
-    
-    // Clear progress animation
-    if (progressInterval) {
-        clearInterval(progressInterval)
-        progressInterval = null
-    }
-    
-    // Reset progress bar
-    if (progressFill) {
-        progressFill.style.width = '0%'
-    }
-    
-    // Reset progress text
-    if (progressText) {
-        progressText.textContent = 'Preparing upload...'
-    }
-    
-    console.log('📊 Upload progress hidden')
-}
-
-/**
- * Display messages to user with different styles
- * @param {string} message - Message to display
- * @param {string} type - Message type: 'info', 'success', 'error', 'warning'
- */
-function showMessage(message, type = 'info') {
-    const messageDiv = document.getElementById('uploadMessage')
-    
-    if (messageDiv) {
-        messageDiv.textContent = message
-        messageDiv.className = `upload-message ${type}`
-        messageDiv.classList.remove('hidden')
-        
-        // Scroll message into view
-        messageDiv.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'nearest' 
-        })
-        
-        // Auto-hide success messages after 5 seconds
-        if (type === 'success') {
-            setTimeout(() => {
-                messageDiv.classList.add('hidden')
-            }, 5000)
-        }
-    }
-    
-    console.log(`💬 Message (${type}):`, message)
-}
-
-// ===================================================
-// SUPABASE INTEGRATION
+// UPLOAD PROGRESS AND SUPABASE INTEGRATION
 // ===================================================
 
 /**
@@ -609,14 +454,6 @@ async function savePhotoToSupabase(photoFile, photoData) {
         throw new Error('User not authenticated')
     }
     
-    console.log('☁️ Starting Supabase upload process')
-    console.log('👤 Current user:', currentUser.id)
-    console.log('📊 File details:', {
-        name: photoFile.name,
-        size: photoFile.size,
-        type: photoFile.type
-    })
-    
     try {
         // First, check if we can access Supabase
         const { data: { session } } = await supabase.auth.getSession()
@@ -630,11 +467,6 @@ async function savePhotoToSupabase(photoFile, photoData) {
         const randomSuffix = Math.random().toString(36).substring(2, 8)
         const fileName = `${currentUser.id}/${timestamp}_${randomSuffix}.${fileExt}`
         
-        console.log('📁 Generated filename:', fileName)
-        
-        // Update progress: Starting upload
-        updateProgressText('Uploading photo...')
-        
         // Try multiple bucket name variations (common issue)
         const bucketNames = ['photos', 'Photos', 'photo-moments', 'photomoments']
         let uploadSuccess = false
@@ -642,8 +474,6 @@ async function savePhotoToSupabase(photoFile, photoData) {
         let workingBucket = null
         
         for (const bucketName of bucketNames) {
-            console.log(`🪣 Trying bucket: ${bucketName}`)
-            
             try {
                 const { data, error } = await supabase.storage
                     .from(bucketName)
@@ -656,21 +486,17 @@ async function savePhotoToSupabase(photoFile, photoData) {
                     uploadData = data
                     workingBucket = bucketName
                     uploadSuccess = true
-                    console.log(`✅ Upload successful with bucket: ${bucketName}`)
                     break
                 } else if (error) {
-                    console.log(`❌ Failed with bucket ${bucketName}:`, error.message)
+                    continue
                 }
             } catch (bucketError) {
-                console.log(`❌ Exception with bucket ${bucketName}:`, bucketError.message)
                 continue
             }
         }
         
         if (!uploadSuccess || !uploadData) {
             // If all buckets fail, try creating a new bucket
-            console.log('🆕 Attempting to create new bucket: photos')
-            
             const { data: bucketData, error: bucketError } = await supabase.storage
                 .createBucket('photos', {
                     public: true,
@@ -679,7 +505,6 @@ async function savePhotoToSupabase(photoFile, photoData) {
                 })
             
             if (bucketError && !bucketError.message.includes('already exists')) {
-                console.error('❌ Bucket creation error:', bucketError)
                 throw new Error(`Failed to create storage bucket: ${bucketError.message}`)
             }
             
@@ -692,19 +517,12 @@ async function savePhotoToSupabase(photoFile, photoData) {
                 })
             
             if (error) {
-                console.error('❌ Final upload attempt failed:', error)
                 throw new Error(`Storage upload failed: ${error.message}. Please check your Supabase configuration.`)
             }
             
             uploadData = data
             workingBucket = 'photos'
         }
-        
-        console.log('✅ File uploaded to storage:', uploadData.path)
-        
-        // Update progress: Getting public URL
-        updateProgressText('Processing image...')
-        updateProgressBar(70)
         
         // Get public URL for the uploaded photo
         const { data: urlData } = supabase.storage
@@ -716,11 +534,6 @@ async function savePhotoToSupabase(photoFile, photoData) {
         }
         
         const photoUrl = urlData.publicUrl
-        console.log('🔗 Public URL generated:', photoUrl)
-        
-        // Update progress: Saving to database
-        updateProgressText('Saving details...')
-        updateProgressBar(90)
         
         // Try multiple table name variations
         const tableNames = ['photos', 'Photos', 'photo_moments', 'photomoments']
@@ -739,8 +552,6 @@ async function savePhotoToSupabase(photoFile, photoData) {
         }
         
         for (const tableName of tableNames) {
-            console.log(`📋 Trying table: ${tableName}`)
-            
             try {
                 const { data: dbData, error: dbError } = await supabase
                     .from(tableName)
@@ -750,13 +561,11 @@ async function savePhotoToSupabase(photoFile, photoData) {
                 if (!dbError && dbData && dbData.length > 0) {
                     savedPhoto = dbData[0]
                     dbSuccess = true
-                    console.log(`✅ Database save successful with table: ${tableName}`)
                     break
                 } else if (dbError) {
-                    console.log(`❌ Failed with table ${tableName}:`, dbError.message)
+                    continue
                 }
             } catch (tableError) {
-                console.log(`❌ Exception with table ${tableName}:`, tableError.message)
                 continue
             }
         }
@@ -765,33 +574,14 @@ async function savePhotoToSupabase(photoFile, photoData) {
             throw new Error('Failed to save photo metadata to database. Please check your table configuration.')
         }
         
-        // Update progress: Complete
-        updateProgressText('Complete!')
-        updateProgressBar(100)
-        
-        console.log('✅ Photo metadata saved to database:', savedPhoto.id)
-        
         // Update local cache if it exists
         if (window.userPhotos && Array.isArray(window.userPhotos)) {
             window.userPhotos.unshift(savedPhoto)
-            console.log('📱 Local cache updated')
         }
         
         return savedPhoto
         
     } catch (error) {
-        console.error('❌ Save photo error:', error)
-        
-        // Log additional error details for debugging
-        if (error.details) {
-            console.error('Error details:', error.details)
-        }
-        if (error.hint) {
-            console.error('Error hint:', error.hint)
-        }
-        if (error.code) {
-            console.error('Error code:', error.code)
-        }
         
         // Provide more specific error messages
         let userMessage = error.message
@@ -810,28 +600,6 @@ async function savePhotoToSupabase(photoFile, photoData) {
     }
 }
 
-/**
- * Update progress bar percentage
- * @param {number} percentage - Progress percentage (0-100)
- */
-function updateProgressBar(percentage) {
-    const progressFill = document.getElementById('progressFill')
-    if (progressFill) {
-        progressFill.style.width = `${Math.min(100, Math.max(0, percentage))}%`
-    }
-}
-
-/**
- * Update progress text message
- * @param {string} text - Progress text to display
- */
-function updateProgressText(text) {
-    const progressText = document.getElementById('progressText')
-    if (progressText) {
-        progressText.textContent = text
-    }
-}
-
 // ===================================================
 // AUTHENTICATION MANAGEMENT
 // ===================================================
@@ -840,35 +608,32 @@ function updateProgressText(text) {
  * Handle user logout
  */
 async function handleLogout() {
+    const logoutToastId = window.showToast.loading('Signing you out...')
     try {
-        console.log('🚪 Logging out user')
-        
-        // Sign out from Supabase
         const { error } = await supabase.auth.signOut()
         
         if (error) {
-            console.error('❌ Logout error:', error)
+            window.showToast.update(logoutToastId, 'error', 'Logout failed. Redirecting anyway...', {
+                autoClose: 1500
+            });
+            setTimeout(() => {
+                window.location.href = 'login.html'
+            }, 1000)
+            return;
         }
         
-        // Clear current user
         currentUser = null
-        
-        // Redirect to login page
-        window.location.href = 'login.html'
+        window.showToast.update(logoutToastId, 'success', '👋 See you next time!', {
+            autoClose: 1500
+        });
+        setTimeout(() => {
+            window.location.href = 'login.html'
+        }, 1500)
         
     } catch (error) {
-        console.error('❌ Logout error:', error)
-        
-        // Force redirect even if logout fails
-        showMessage('Logging out...', 'info')
+        window.showToast.update(logoutToastId, 'error', 'Logout failed. Redirecting anyway...');
         setTimeout(() => {
             window.location.href = 'login.html'
         }, 1000)
     }
 }
-
-// ===================================================
-// INITIALIZATION COMPLETE
-// ===================================================
-
-console.log('✅ Upload page JavaScript loaded successfully! 📤')

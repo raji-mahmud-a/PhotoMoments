@@ -3,8 +3,6 @@
 // ===================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Auth page loaded')
-    
     // DOM elements
     const loginTab = document.getElementById('loginTab')
     const signupTab = document.getElementById('signupTab')
@@ -12,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const signupForm = document.getElementById('signupForm')
     const loginButton = document.getElementById('loginButton')
     const signupButton = document.getElementById('signupButton')
-    const authMessage = document.getElementById('authMessage')
     
     // Tab switching
     loginTab.addEventListener('click', () => switchTab('login'))
@@ -44,7 +41,10 @@ function switchTab(tab) {
         loginForm.classList.add('hidden')
     }
     
-    hideMessage()
+    // Dismiss any lingering messages
+    if (window.showToast) {
+        window.showToast.dismissAll();
+    }
 }
 
 function showLoading(button) {
@@ -65,17 +65,6 @@ function hideLoading(button) {
     button.disabled = false
 }
 
-function showMessage(message, isError = false) {
-    const messageDiv = document.getElementById('authMessage')
-    messageDiv.textContent = message
-    messageDiv.className = `auth-message ${isError ? 'error' : 'success'}`
-}
-
-function hideMessage() {
-    const messageDiv = document.getElementById('authMessage')
-    messageDiv.classList.add('hidden')
-}
-
 // Small helper to wait for a short period
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
@@ -89,11 +78,10 @@ async function handleLogin(e) {
     const loginButton = document.getElementById('loginButton')
     
     showLoading(loginButton)
-    hideMessage()
     
+    const loadingToastId = window.showToast.loading('Signing you in...')
+
     try {
-        console.log('Attempting to sign in:', email)
-        
         const { data, error } = await supabase.auth.signInWithPassword({
             email: email,
             password: password
@@ -103,23 +91,24 @@ async function handleLogin(e) {
             throw error
         }
         
-        console.log('Sign in request succeeded (may still require a session to be established):', data)
-        showMessage('Sign in successful! Finalizing session...')
-        
         // First try an immediate session check
         const { data: sessionData } = await supabase.auth.getSession()
         if (sessionData?.session?.user) {
-            console.log('Session available immediately after sign in')
-            window.location.href = 'index.html'
+            window.showToast.update(loadingToastId, 'success', '🎉 Welcome back! Redirecting...', { autoClose: 2000 });
+            setTimeout(() => {
+                window.location.href = 'index.html'
+            }, 1500)
             return
         }
         
         // Otherwise listen for auth state change and redirect when signed in.
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('Auth state change event:', event, session)
             if (event === 'SIGNED_IN' && session?.user) {
                 try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
-                window.location.href = 'index.html'
+                window.showToast.update(loadingToastId, 'success', '🎉 Welcome back! Redirecting...', { autoClose: 2000 });
+                setTimeout(() => {
+                    window.location.href = 'index.html'
+                }, 1500)
             }
         })
         
@@ -131,16 +120,18 @@ async function handleLogin(e) {
             const { data: s } = await supabase.auth.getSession()
             if (s?.session?.user) {
                 try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
-                window.location.href = 'index.html'
+                window.showToast.update(loadingToastId, 'success', '🎉 Welcome back! Redirecting...', { autoClose: 2000 });
+                setTimeout(() => {
+                    window.location.href = 'index.html'
+                }, 1500)
                 return
             }
         }
         
-        // If we get here, session wasn't established quickly. Keep on page and inform user.
-        showMessage('Sign in succeeded but session is not yet available. Please wait or refresh the page.', true)
+        // If we get here, session wasn't established quickly.
+        window.showToast.update(loadingToastId, 'error', 'Sign in succeeded but session is not yet available. Please wait or refresh the page.');
     } catch (error) {
-        console.error('Login error:', error?.message || error)
-        showMessage(getSupabaseErrorMessage(error?.message || String(error)), true)
+        window.showToast.update(loadingToastId, 'error', getSupabaseErrorMessage(error?.message || String(error)));
     } finally {
         hideLoading(loginButton)
     }
@@ -156,16 +147,15 @@ async function handleSignup(e) {
     
     // Validate passwords match
     if (password !== confirmPassword) {
-        showMessage('Passwords do not match', true)
+        window.showToast.error('Passwords do not match. Please try again.')
         return
     }
     
     showLoading(signupButton)
-    hideMessage()
     
+    const loadingToastId = window.showToast.loading('Creating your account...')
+
     try {
-        console.log('Attempting to create account:', email)
-        
         const { data, error } = await supabase.auth.signUp({
             email: email,
             password: password
@@ -177,24 +167,28 @@ async function handleSignup(e) {
         
         // If a user exists but no session, an email confirmation may be required
         if (data.user && !data.session) {
-            showMessage('Please check your email to confirm your account!')
+            window.showToast.update(loadingToastId, 'info', '📧 Please check your email to confirm your account!', { autoClose: 8000 });
             return
         }
         
         // If we have a session immediately, redirect
         const { data: sessionData } = await supabase.auth.getSession()
         if (sessionData?.session?.user) {
-            console.log('Account created and session available immediately')
-            window.location.href = 'index.html'
+            window.showToast.update(loadingToastId, 'success', '🎉 Account created! Welcome to PhotoMoments!', { autoClose: 2000 });
+            setTimeout(() => {
+                window.location.href = 'index.html'
+            }, 1500)
             return
         }
         
         // Otherwise listen for auth state change before redirecting
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('Auth state change event (signup):', event, session)
             if (event === 'SIGNED_IN' && session?.user) {
                 try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
-                window.location.href = 'index.html'
+                window.showToast.update(loadingToastId, 'success', '🎉 Account created! Welcome to PhotoMoments!', { autoClose: 2000 });
+                setTimeout(() => {
+                    window.location.href = 'index.html'
+                }, 1500)
             }
         })
 
@@ -206,15 +200,17 @@ async function handleSignup(e) {
             const { data: s } = await supabase.auth.getSession()
             if (s?.session?.user) {
                 try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
-                window.location.href = 'index.html'
+                window.showToast.update(loadingToastId, 'success', '🎉 Account created! Welcome to PhotoMoments!', { autoClose: 2000 });
+                setTimeout(() => {
+                    window.location.href = 'index.html'
+                }, 1500)
                 return
             }
         }
 
-        showMessage('Account created! Please complete email confirmation if required.', true)
+        window.showToast.update(loadingToastId, 'error', 'Account created! Please complete email confirmation if required.');
     } catch (error) {
-        console.error('Signup error:', error?.message || error)
-        showMessage(getSupabaseErrorMessage(error?.message || String(error)), true)
+        window.showToast.update(loadingToastId, 'error', getSupabaseErrorMessage(error?.message || String(error)));
     } finally {
         hideLoading(signupButton)
     }
@@ -223,13 +219,11 @@ async function handleSignup(e) {
 async function checkExistingSession() {
     try {
         const { data: { session } } = await supabase.auth.getSession()
-        console.log('Existing session at page load:', session)
         if (session?.user) {
-            console.log('User already logged in, redirecting...')
             window.location.href = 'index.html'
         }
     } catch (err) {
-        console.error('Error checking existing session:', err)
+        window.showToast.error('Error checking session. Please try refreshing the page.')
     }
 }
 

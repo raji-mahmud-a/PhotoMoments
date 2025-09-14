@@ -10,16 +10,14 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
 
 // Global variables for current user
-//let currentUser = null
+let currentUser = null
 let userPhotos = []
 
 // Initialize auth state listener
 supabase.auth.onAuthStateChange((event, session) => {
-    console.log('Auth state changed:', event, session?.user?.email)
     
     if (session?.user) {
         currentUser = session.user
-        console.log('User logged in:', currentUser.email)
         
         // Load user's photos when they log in
         if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
@@ -28,7 +26,6 @@ supabase.auth.onAuthStateChange((event, session) => {
     } else {
         currentUser = null
         userPhotos = []
-        console.log('User logged out')
         
         // Redirect to login if not on login page
         if (!window.location.pathname.includes('login.html')) {
@@ -42,13 +39,10 @@ supabase.auth.onAuthStateChange((event, session) => {
  */
 async function loadUserPhotos() {
     if (!currentUser) {
-        console.log('No user logged in')
         return
     }
     
     try {
-        console.log('Loading photos for user:', currentUser.id)
-        
         const { data, error } = await supabase
             .from('Photos')  // ← CHANGED: Capital P
             .select('*')
@@ -56,12 +50,17 @@ async function loadUserPhotos() {
             .order('photo_date', { ascending: false })
         
         if (error) {
-            console.error('Error loading photos:', error)
+            window.showToast.error('Failed to load your memories. Please refresh the page.')
             return
         }
         
         userPhotos = data || []
-        console.log(`Loaded ${userPhotos.length} photos`)
+        
+        if (userPhotos.length > 0) {
+            window.showToast.success(`📸 Loaded ${userPhotos.length} memories`, {
+                autoClose: 2000
+            })
+        }
         
         // Update the gallery if we're on the main page
         if (typeof renderGrid === 'function') {
@@ -71,7 +70,7 @@ async function loadUserPhotos() {
         }
         
     } catch (err) {
-        console.error('Error in loadUserPhotos:', err)
+        window.showToast.error('Connection error. Please check your internet and try again.')
     }
 }
 
@@ -87,8 +86,6 @@ async function savePhotoToSupabase(photoFile, photoData) {
         // Create unique filename
         const fileExt = photoFile.name.split('.').pop()
         const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`
-        
-        console.log('Uploading photo:', fileName)
         
         // Upload photo to storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -122,15 +119,12 @@ async function savePhotoToSupabase(photoFile, photoData) {
             throw dbError
         }
         
-        console.log('Photo saved successfully:', dbData[0])
-        
         // Add to local array
         userPhotos.unshift(dbData[0])
         
         return dbData[0]
         
     } catch (error) {
-        console.error('Error saving photo:', error)
         throw error
     }
 }
@@ -142,5 +136,3 @@ function getPhotosForMonth(year, month) {
     const monthYear = `${year}-${String(month).padStart(2, '0')}`
     return userPhotos.filter(photo => photo.month_year === monthYear)
 }
-
-console.log('Supabase initialized successfully! 🚀')
