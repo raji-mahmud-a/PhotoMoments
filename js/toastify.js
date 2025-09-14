@@ -1,102 +1,107 @@
 // ===================================================
-// React Toastify Setup for PhotoMoments
+// Toastify-js Setup for PhotoMoments
 // ===================================================
 
-// Wait for React Toastify to be available
 document.addEventListener('DOMContentLoaded', function() {
-    // Create toast container if it doesn't exist
-    if (!document.getElementById('toast-container')) {
-        const toastContainer = document.createElement('div');
-        toastContainer.id = 'toast-container';
-        document.body.appendChild(toastContainer);
-    }
-
     // Configure default toast options
     const toastConfig = {
-        position: "top-right",
-        autoClose: 4000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        containerId: 'toast-container'
+        position: "right",
+        gravity: "top",
+        duration: 4000,
+        close: true,
+        stopOnFocus: true,
+        className: "",
     };
 
     // Create wrapper functions for easier usage
     window.showToast = {
         success: (message, options = {}) => {
-            ReactToastify.toast.success(message, {
+            Toastify({
                 ...toastConfig,
                 ...options,
+                text: message,
                 className: 'toast-success',
-                progressClassName: 'toast-progress-success'
-            });
+                style: {
+                    background: "#4caf50"
+                }
+            }).showToast();
         },
 
         error: (message, options = {}) => {
-            ReactToastify.toast.error(message, {
+            Toastify({
                 ...toastConfig,
-                autoClose: 6000, // Longer for errors
+                duration: 6000, // Longer for errors
                 ...options,
+                text: message,
                 className: 'toast-error',
-                progressClassName: 'toast-progress-error'
-            });
+                style: {
+                    background: "#f44336"
+                }
+            }).showToast();
         },
 
         warning: (message, options = {}) => {
-            ReactToastify.toast.warn(message, {
+            Toastify({
                 ...toastConfig,
-                autoClose: 5000,
+                duration: 5000,
                 ...options,
+                text: message,
                 className: 'toast-warning',
-                progressClassName: 'toast-progress-warning'
-            });
+                style: {
+                    background: "#ff9800"
+                }
+            }).showToast();
         },
 
         info: (message, options = {}) => {
-            ReactToastify.toast.info(message, {
+            Toastify({
                 ...toastConfig,
                 ...options,
+                text: message,
                 className: 'toast-info',
-                progressClassName: 'toast-progress-info'
-            });
+                style: {
+                    background: "#2196f3"
+                }
+            }).showToast();
         },
 
         loading: (message, options = {}) => {
-            return ReactToastify.toast.loading(message, {
+            return Toastify({
                 ...toastConfig,
-                autoClose: false,
-                closeOnClick: false,
-                draggable: false,
+                duration: -1, // Won't auto-close
                 ...options,
+                text: message,
                 className: 'toast-loading',
-            });
+                style: {
+                    background: "#9e9e9e"
+                }
+            }).showToast();
         },
 
-        // Update existing toast (useful for loading states)
-        update: (toastId, type, message, options = {}) => {
-            ReactToastify.toast.update(toastId, {
-                render: message,
-                type: type,
-                isLoading: false,
-                autoClose: 4000,
-                closeOnClick: true,
-                draggable: true,
-                ...options
-            });
+        // Update existing toast (simplified version)
+        update: (toastInstance, type, message, options = {}) => {
+            if (toastInstance) {
+                toastInstance.hideToast();
+            }
+            // Show new toast with updated message
+            return window.showToast[type](message, options);
         },
 
         // Dismiss specific toast
-        dismiss: (toastId) => {
-            ReactToastify.toast.dismiss(toastId);
+        dismiss: (toastInstance) => {
+            if (toastInstance) {
+                toastInstance.hideToast();
+            }
         },
 
-        // Dismiss all toasts
+        // Dismiss all toasts (Toastify-js doesn't have this built-in)
         dismissAll: () => {
-            ReactToastify.toast.dismiss();
+            const toasts = document.querySelectorAll('.toastify');
+            toasts.forEach(toast => {
+                toast.remove();
+            });
         }
     };
 
-    console.log('React Toastify initialized! 🍞');
+    console.log('Toastify initialized! 🍞');
 });
