@@ -8,8 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const signupTab = document.getElementById('signupTab')
     const loginForm = document.getElementById('loginForm')
     const signupForm = document.getElementById('signupForm')
-    const loginButton = document.getElementById('loginButton')
-    const signupButton = document.getElementById('signupButton')
     
     // Tab switching
     loginTab.addEventListener('click', () => switchTab('login'))
@@ -91,48 +89,18 @@ async function handleLogin(e) {
             throw error
         }
         
-        // First try an immediate session check
-        const { data: sessionData } = await supabase.auth.getSession()
-        if (sessionData?.session?.user) {
-            window.showToast.update(loadingToastId, 'success', '🎉 Welcome back! Redirecting...', { autoClose: 2000 });
-            setTimeout(() => {
-                window.location.href = 'index.html'
-            }, 1500)
-            return
-        }
+        // Set session in localStorage to prevent redirect loops
+        localStorage.setItem('photoMoments_session', 'true')
         
-        // Otherwise listen for auth state change and redirect when signed in.
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
-                try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
-                window.showToast.update(loadingToastId, 'success', '🎉 Welcome back! Redirecting...', { autoClose: 2000 });
-                setTimeout(() => {
-                    window.location.href = 'index.html'
-                }, 1500)
-            }
-        })
+        window.showToast.update(loadingToastId, 'success', '🎉 Welcome back! Redirecting...', { autoClose: 2000 })
         
-        // Fallback: poll for session for a short window (3s)
-        let waited = 0
-        while (waited < 3000) {
-            await sleep(200)
-            waited += 200
-            const { data: s } = await supabase.auth.getSession()
-            if (s?.session?.user) {
-                try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
-                window.showToast.update(loadingToastId, 'success', '🎉 Welcome back! Redirecting...', { autoClose: 2000 });
-                setTimeout(() => {
-                    window.location.href = 'index.html'
-                }, 1500)
-                return
-            }
-        }
+        // Redirect after a short delay
+        setTimeout(() => {
+            window.location.href = 'index.html'
+        }, 1500)
         
-        // If we get here, session wasn't established quickly.
-        window.showToast.update(loadingToastId, 'error', 'Sign in succeeded but session is not yet available. Please wait or refresh the page.');
     } catch (error) {
-        window.showToast.update(loadingToastId, 'error', getSupabaseErrorMessage(error?.message || String(error)));
-    } finally {
+        window.showToast.update(loadingToastId, 'error', getSupabaseErrorMessage(error?.message || String(error)))
         hideLoading(loginButton)
     }
 }
@@ -167,60 +135,41 @@ async function handleSignup(e) {
         
         // If a user exists but no session, an email confirmation may be required
         if (data.user && !data.session) {
-            window.showToast.update(loadingToastId, 'info', '📧 Please check your email to confirm your account!', { autoClose: 8000 });
+            window.showToast.update(loadingToastId, 'info', '📧 Please check your email to confirm your account!', { autoClose: 8000 })
+            hideLoading(signupButton)
             return
         }
         
-        // If we have a session immediately, redirect
-        const { data: sessionData } = await supabase.auth.getSession()
-        if (sessionData?.session?.user) {
-            window.showToast.update(loadingToastId, 'success', '🎉 Account created! Welcome to PhotoMoments!', { autoClose: 2000 });
-            setTimeout(() => {
-                window.location.href = 'index.html'
-            }, 1500)
-            return
-        }
+        // Set session in localStorage
+        localStorage.setItem('photoMoments_session', 'true')
         
-        // Otherwise listen for auth state change before redirecting
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
-                try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
-                window.showToast.update(loadingToastId, 'success', '🎉 Account created! Welcome to PhotoMoments!', { autoClose: 2000 });
-                setTimeout(() => {
-                    window.location.href = 'index.html'
-                }, 1500)
-            }
-        })
-
-        // Poll as a short fallback
-        let waited = 0
-        while (waited < 3000) {
-            await sleep(200)
-            waited += 200
-            const { data: s } = await supabase.auth.getSession()
-            if (s?.session?.user) {
-                try { subscription?.unsubscribe?.() } catch (e) { /* ignore */ }
-                window.showToast.update(loadingToastId, 'success', '🎉 Account created! Welcome to PhotoMoments!', { autoClose: 2000 });
-                setTimeout(() => {
-                    window.location.href = 'index.html'
-                }, 1500)
-                return
-            }
-        }
-
-        window.showToast.update(loadingToastId, 'error', 'Account created! Please complete email confirmation if required.');
+        window.showToast.update(loadingToastId, 'success', '🎉 Account created! Welcome to PhotoMoments!', { autoClose: 2000 })
+        
+        // Redirect after a short delay
+        setTimeout(() => {
+            window.location.href = 'index.html'
+        }, 1500)
+        
     } catch (error) {
-        window.showToast.update(loadingToastId, 'error', getSupabaseErrorMessage(error?.message || String(error)));
+        window.showToast.update(loadingToastId, 'error', getSupabaseErrorMessage(error?.message || String(error)))
     } finally {
         hideLoading(signupButton)
     }
 }
 
 async function checkExistingSession() {
+    // Don't redirect from login page if we're already there
+    if (window.location.pathname.includes('login.html')) {
+        return
+    }
+    
     try {
         const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-            window.location.href = 'index.html'
+        const hasLocalSession = localStorage.getItem('photoMoments_session') === 'true'
+        
+        // Only redirect if there's no session and no local session marker
+        if (!session?.user && !hasLocalSession) {
+            window.location.href = 'login.html'
         }
     } catch (err) {
         window.showToast.error('Error checking session. Please try refreshing the page.')
@@ -240,8 +189,36 @@ function getSupabaseErrorMessage(errorMessage) {
         return 'Password should be at least 6 characters long.'
     }
     if (errorMessage.includes('Unable to validate email address')) {
-        return 'Please enter a valid email address.';
+        return 'Please enter a valid email address.'
     }
     
-    return errorMessage || 'An unexpected error occurred. Please try again.';
+    return errorMessage || 'An unexpected error occurred. Please try again.'
 }
+
+// Add logout handler
+async function handleLogout() {
+    const loadingToastId = window.showToast.loading('Signing you out...')
+    
+    try {
+        await supabase.auth.signOut()
+        
+        // Clear session marker
+        localStorage.removeItem('photoMoments_session')
+        
+        window.showToast.update(loadingToastId, 'success', '👋 See you next time!', { autoClose: 1500 })
+        
+        setTimeout(() => {
+            window.location.href = 'login.html'
+        }, 1500)
+    } catch (error) {
+        window.showToast.update(loadingToastId, 'error', 'Error signing out. Please try again.')
+    }
+}
+
+// Attach logout handler to logout buttons
+document.addEventListener('DOMContentLoaded', function() {
+    const logoutBtn = document.getElementById('logoutBtn')
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout)
+    }
+})
