@@ -136,3 +136,9 @@ function getPhotosForMonth(year, month) {
     const monthYear = `${year}-${String(month).padStart(2, '0')}`
     return userPhotos.filter(photo => photo.month_year === monthYear)
 }
+
+
+
+
+// i don tire abeg
+//please work
