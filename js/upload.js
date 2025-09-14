@@ -1,262 +1,312 @@
 // ===================================================
-// PhotoMoments - Photo Upload Functionality
-// ===================================================
-// This file handles the photo upload process including:
-// - User authentication validation
-// - File selection and preview
-// - Form submission and validation
-// - Supabase storage upload
-// - Database metadata storage
+// PhotoMoments - Upload Page Logic (with new toast + progress + preview + external savePhotoToSupabase)
 // ===================================================
 
-// Global variables
 let selectedFile = null
 let isUploading = false
-let progressInterval = null
+let currentObjectUrl = null
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Upload page loading...')
-
-    // Wait for the global userReady event before initializing the interface
-    document.addEventListener('userReady', initializeUploadInterface)
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Upload page loading...')
+  document.addEventListener('userReady', initializeUploadInterface)
 })
 
-/**
- * Initialize the upload interface with DOM elements and event listeners
- */
 function initializeUploadInterface() {
-    console.log('User session ready. Initializing upload interface.')
-    
-    // Get DOM elements
-    const dropZone = document.getElementById('dropZone')
-    const photoInput = document.getElementById('photoInput')
-    const selectFileBtn = document.getElementById('selectFileBtn')
-    const removePhotoBtn = document.getElementById('removePhoto')
-    const uploadForm = document.getElementById('uploadForm')
-    const photoDate = document.getElementById('photoDate')
-    const cancelBtn = document.getElementById('cancelBtn')
-    const logoutBtn = document.getElementById('logoutBtn')
-    const uploadBtn = document.getElementById('uploadButton')
+  console.log('User session ready. Initializing upload interface.')
 
-    // Validate required elements exist
-    if (!dropZone || !photoInput || !uploadForm) {
-        toast.error('Page loading error. Please refresh the page.');
-        return
+  const dropZone = document.getElementById('dropZone')
+  const photoInput = document.getElementById('photoInput')
+  const uploadForm = document.getElementById('uploadForm')
+  const dropZoneContent = document.getElementById('dropZoneContent')
+  const uploadButton = document.getElementById('uploadButton')
+  const removePhotoBtn = document.getElementById('removePhoto')
+  const photoDate = document.getElementById('photoDate')
+  const cancelBtn = document.getElementById('cancelBtn')
+  const logoutBtn = document.getElementById('logoutBtn')
+
+  if (!dropZone || !photoInput || !uploadForm || !dropZoneContent) {
+    console.warn(dropZone, photoInput, uploadForm, dropZoneContent)
+    toast.error('Page loading error. Please refresh the page.')
+    return
+  }
+
+  if (photoDate) photoDate.valueAsDate = new Date()
+
+  setupDropZone(dropZone, photoInput)
+
+  // This is a key change: Ensure handleFile is called
+  // directly when the input changes.
+  photoInput.addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0]
+    if (f) handleFile(f)
+  })
+
+  document.addEventListener('click', (e) => {
+    const target = e.target
+    if (!target) return
+
+    if (target.matches('#selectFileBtn') || target.closest('#selectFileBtn')) {
+      e.preventDefault()
+      photoInput.click()
     }
 
-    // Set default date to today
-    if (photoDate) {
-        photoDate.valueAsDate = new Date()
+    if (target.matches('#removePhoto') || target.closest('#removePhoto')) {
+      e.preventDefault()
+      removeSelectedPhoto(dropZoneContent, photoInput, dropZone)
     }
+  })
 
-    // Setup event listeners
-    setupDropZone()
+  uploadForm.addEventListener('submit', handleFormSubmit)
 
-    selectFileBtn?.addEventListener('click', () => photoInput.click())
-    photoInput?.addEventListener('change', handleFileSelect)
-    removePhotoBtn?.addEventListener('click', removeSelectedPhoto)
-    uploadForm?.addEventListener('submit', handleFormSubmit)
-    cancelBtn?.addEventListener('click', () => window.location.href = 'index.html')
-    logoutBtn?.addEventListener('click', handleLogout)
+  cancelBtn?.addEventListener('click', () => (window.location.href = 'index.html'))
+  logoutBtn?.addEventListener('click', handleLogout)
+
+  showInitialState(dropZone, uploadButton, removePhotoBtn, dropZoneContent, uploadForm)
 }
 
-/**
- * Setup drag-and-drop functionality
- */
-function setupDropZone() {
-    const dropZone = document.getElementById('dropZone')
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        dropZone.classList.add('dragover')
-    })
-    dropZone.addEventListener('dragleave', (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        dropZone.classList.remove('dragover')
-    })
-    dropZone.addEventListener('drop', handleDrop)
-}
-
-/**
- * Handle files dropped into the drop zone
- */
-function handleDrop(e) {
-    e.preventDefault()
-    e.stopPropagation()
-    const dropZone = document.getElementById('dropZone')
-    dropZone.classList.remove('dragover')
-    const files = e.dataTransfer.files
-    if (files.length > 0) {
-        handleFile(files[0])
-    }
-}
-
-/**
- * Handle file selection from input
- */
-function handleFileSelect(event) {
-    handleFile(event.target.files[0])
-}
-
-/**
- * Process a single file
- */
+// -------------------
+// File Handling
+// -------------------
 function handleFile(file) {
-    if (!file) return
+  console.log('File selected:', file.name)
 
-    if (file.type.startsWith('image/')) {
-        selectedFile = file
-        const dropZoneContent = document.getElementById('dropZoneContent')
-        dropZoneContent.innerHTML = `<img id="previewImage" src="${URL.createObjectURL(file)}" alt="Image Preview">`
-        showPreviewState()
-    } else {
-        toast.error('Invalid file type. Please select an image.')
-        selectedFile = null
-    }
-}
+  if (!file.type.startsWith('image/')) {
+    toast.error('Please select an image file (JPG, PNG, WEBP)', { autoClose: 4000 })
+    return
+  }
 
-/**
- * Remove the selected photo and reset the UI
- */
-function removeSelectedPhoto() {
-    selectedFile = null
+  const maxSize = 10 * 1024 * 1024 // 10MB
+  if (file.size > maxSize) {
+    toast.error('File is too large. Please select an image under 10MB', { autoClose: 5000 })
+    return
+  }
+
+  const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1)
+  toast.success(`📷 ${file.name} selected (${fileSizeMB}MB)`, { autoClose: 2000 })
+
+  selectedFile = file
+
+  if (currentObjectUrl) {
+    try { URL.revokeObjectURL(currentObjectUrl) } catch {}
+    currentObjectUrl = null
+  }
+
+  const reader = new FileReader()
+  reader.onload = function (e) {
+    currentObjectUrl = e.target.result
     const dropZoneContent = document.getElementById('dropZoneContent')
-    dropZoneContent.innerHTML = `
-        <span class="material-symbols-outlined upload-icon">cloud_upload</span>
-        <p>Drag & Drop your photo here</p>
-        <p>OR</p>
-        <button type="button" class="btn Primarybtn" id="selectFileBtn">Select from device</button>
-    `
-    showInitialState()
-    
-    // Re-attach event listener to the new button
-    document.getElementById('selectFileBtn').addEventListener('click', () => document.getElementById('photoInput').click())
-}
-
-/**
- * Show the initial state of the upload form
- */
-function showInitialState() {
-    document.getElementById('uploadButton').style.display = 'none'
-    document.getElementById('removePhoto').style.display = 'none'
-    document.getElementById('dropZone').style.border = '2px dashed #9ca3af'
-    document.getElementById('dropZone').style.padding = '20px'
-    document.getElementById('uploadForm').style.display = 'none'
-    document.getElementById('dropZoneContent').classList.remove('preview-state')
-    
-}
-
-/**
- * Show the preview state of the upload form
- */
-function showPreviewState() {
-    document.getElementById('uploadButton').style.display = 'inline-block'
-    document.getElementById('removePhoto').style.display = 'inline-block'
-    document.getElementById('dropZone').style.border = 'none'
-    document.getElementById('dropZone').style.padding = '0'
-    document.getElementById('uploadForm').style.display = 'block'
-    document.getElementById('dropZoneContent').classList.add('preview-state')
-}
-
-
-/**
- * Handle form submission
- */
-async function handleFormSubmit(event) {
-    event.preventDefault()
-    
-    if (isUploading) return
-    
-    if (!selectedFile) {
-        toast.error('Please select a photo to upload.')
-        return
+    if (dropZoneContent) {
+      dropZoneContent.innerHTML = `
+        <div class="preview-wrapper">
+          <img id="previewImage" src="${currentObjectUrl}" alt="Image preview" />
+        </div>
+      `
     }
 
-    const uploadButton = document.getElementById('uploadButton')
-    const form = event.target
-    const story = form.elements['story'].value
-    const date = form.elements['photoDate'].value
-    const year = new Date(date).getFullYear()
-    const month = new Date(date).getMonth() + 1
-    const monthYear = `${year}-${String(month).padStart(2, '0')}`
+    showPreviewState(
+      document.getElementById('dropZone'),
+      document.getElementById('uploadButton'),
+      document.getElementById('removePhoto'),
+      document.getElementById('uploadForm'),
+      dropZoneContent
+    )
+
+    toast.info('💡 Add a story to make this memory special!', { autoClose: 3000, delay: 1000 })
+  }
+  reader.readAsDataURL(file)
+}
+
+// -------------------
+// Upload Form Submit
+// -------------------
+async function handleFormSubmit(e) {
+  e.preventDefault()
+
+  if (!selectedFile) {
+    toast.error('Please select a photo to upload')
+    return
+  }
+
+  if (isUploading) {
+    toast.warning('Upload already in progress...')
+    return
+  }
+
+  const photoDate = document.getElementById('photoDate').value
+  const photoStory = document.getElementById('photoStory').value.trim()
+
+  if (!photoDate) {
+    toast.error('Please select a date for this photo')
+    return
+  }
+
+  isUploading = true
+  showUploadProgress()
+
+  const uploadToastId = toast.loading('📤 Uploading your memory...')
+
+  try {
+    console.log('Starting upload process...')
 
     const photoData = {
-        story: story,
-        date: date,
-        monthYear: monthYear
+      date: photoDate,
+      story: photoStory || 'No story added yet.',
+      monthYear: photoDate.substring(0, 7)
     }
-    
-    showLoading(uploadButton)
-    isUploading = true
-    
-    try {
-        await savePhotoToSupabase(selectedFile, photoData)
-        toast.success('Photo uploaded and saved successfully!')
-        
-        // Reset form and go back to main page
-        setTimeout(() => {
-            window.location.href = 'index.html'
-        }, 1500)
-    } catch (error) {
-        console.error('Upload failed:', error)
-        toast.error(`Upload failed: ${error.message}`)
-    } finally {
-        hideLoading(uploadButton)
-        isUploading = false
+
+    toast.update(uploadToastId, 'loading', '🔄 Processing your photo...')
+
+    const savedPhoto = await savePhotoToSupabase(selectedFile, photoData)
+    console.log('Photo saved successfully:', savedPhoto)
+
+    toast.update(uploadToastId, 'success', '✨ Memory saved successfully! Redirecting...', {
+      autoClose: 3000
+    })
+
+    toast.success(`📅 Added to ${getMonthName(photoData.monthYear)} ${photoData.date.split('-')[0]}`, {
+      autoClose: 2000,
+      delay: 500
+    })
+
+    setTimeout(() => { window.location.href = 'index.html' }, 2500)
+
+  } catch (error) {
+    console.error('Upload error:', error)
+    toast.update(uploadToastId, 'error', '❌ Failed to save memory. Please try again.')
+
+    if (error.message) {
+      toast.error(error.message, { autoClose: 6000, delay: 1000 })
     }
+
+    hideUploadProgress()
+  } finally {
+    isUploading = false
+  }
 }
 
-function showLoading(button) {
-    const buttonText = button.querySelector('.button-text')
-    const buttonLoading = button.querySelector('.button-loading')
-    if (buttonText) buttonText.classList.add('hidden')
-    if (buttonLoading) buttonLoading.classList.remove('hidden')
-    if (button) button.disabled = true
+function getMonthName(monthYear) {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const monthNum = parseInt(monthYear.split('-')[1]) - 1
+  return months[monthNum]
 }
 
-function hideLoading(button) {
-    const buttonText = button.querySelector('.button-text')
-    const buttonLoading = button.querySelector('.button-loading')
-    if (buttonText) buttonText.classList.remove('hidden')
-    if (buttonLoading) buttonLoading.classList.add('hidden')
-    if (button) button.disabled = false
-}
+// -------------------
+// Drop Zone
+// -------------------
+function setupDropZone(dropZone, photoInput) {
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault()
+    dropZone.classList.add('dragover')
+  })
 
-/**
- * Handle user logout
- */
-async function handleLogout() {
-    const logoutToast = toast.loading('Signing you out...')
-    try {
-        const { error } = await supabase.auth.signOut()
-        
-        if (error) {
-            toast.update(logoutToast, {
-                text: 'Logout failed. Redirecting anyway...',
-                type: 'error',
-                duration: 1500
-            });
-            setTimeout(() => {
-                window.location.href = 'login.html'
-            }, 1000)
-            return;
+  dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault()
+    dropZone.classList.remove('dragover')
+  })
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault()
+    dropZone.classList.remove('dragover')
+
+    const dt = e.dataTransfer
+    if (!dt) return
+
+    let file = null
+    if (dt.items && dt.items.length) {
+      for (let i = 0; i < dt.items.length; i++) {
+        const item = dt.items[i]
+        if (item.kind === 'file') {
+          file = item.getAsFile()
+          break
         }
-        
-        toast.update(logoutToast, {
-            text: '👋 See you next time!',
-            type: 'success',
-            duration: 1500
-        });
-        
-    } catch (error) {
-        toast.update(logoutToast, {
-            text: 'Logout failed. Redirecting anyway...',
-            type: 'error',
-            duration: 1500
-        });
-        setTimeout(() => {
-            window.location.href = 'login.html'
-        }, 1000)
+      }
     }
+    if (!file && dt.files && dt.files.length) file = dt.files[0]
+    if (!file) return
+
+    try {
+      const dataTransfer = new DataTransfer()
+      dataTransfer.items.add(file)
+      photoInput.files = dataTransfer.files
+    } catch (err) {
+      console.warn('Could not set input.files:', err)
+    }
+
+    handleFile(file)
+  })
+}
+
+// -------------------
+// State Controls
+// -------------------
+function removeSelectedPhoto(dropZoneContentElem, photoInputElem, dropZoneElem) {
+  selectedFile = null
+
+  if (currentObjectUrl) {
+    try { URL.revokeObjectURL(currentObjectUrl) } catch {}
+    currentObjectUrl = null
+  }
+
+  try { photoInputElem.value = '' } catch {}
+
+  if (dropZoneContentElem) {
+    dropZoneContentElem.innerHTML = `
+      <span class="material-symbols-outlined upload-icon">cloud_upload</span>
+      <p>Drag & Drop your photo here</p>
+      <p>OR</p>
+      <button type="button" class="btn Primarybtn" id="selectFileBtn">Select from device</button>
+    `
+  }
+
+  showInitialState(dropZoneElem, document.getElementById('uploadButton'), document.getElementById('removePhoto'), dropZoneContentElem, document.getElementById('uploadForm'))
+}
+
+function showInitialState(dropZone, uploadButton, removePhotoBtn, dropZoneContent, uploadForm) {
+  uploadButton && (uploadButton.style.display = 'none')
+  removePhotoBtn && (removePhotoBtn.style.display = 'none')
+  dropZone && (dropZone.style.border = '2px dashed #9ca3af')
+  dropZone && (dropZone.style.padding = '20px')
+  uploadForm && (uploadForm.style.display = 'none')
+  dropZoneContent && dropZoneContent.classList.remove('preview-state')
+}
+
+function showPreviewState(dropZone, uploadButton, removePhotoBtn, uploadForm, dropZoneContent) {
+  uploadButton && (uploadButton.style.display = 'inline-block')
+  removePhotoBtn && (removePhotoBtn.style.display = 'inline-block')
+  dropZone && (dropZone.style.border = 'none')
+  dropZone && (dropZone.style.padding = '0')
+  uploadForm && (uploadForm.style.display = 'block')
+  dropZoneContent && dropZoneContent.classList.add('preview-state')
+}
+
+// -------------------
+// Upload Progress (stub)
+// -------------------
+function showUploadProgress() {
+  const bar = document.getElementById('uploadProgress')
+  if (bar) bar.style.display = 'block'
+}
+
+function hideUploadProgress() {
+  const bar = document.getElementById('uploadProgress')
+  if (bar) bar.style.display = 'none'
+}
+
+// -------------------
+// Logout
+// -------------------
+async function handleLogout() {
+  const logoutToast = toast.loading('Signing you out...')
+  try {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      toast.update(logoutToast, 'error', 'Logout failed. Redirecting anyway...')
+      return setTimeout(() => (window.location.href = 'login.html'), 1000)
+    }
+    toast.update(logoutToast, 'success', '👋 See you next time!')
+    setTimeout(() => (window.location.href = 'login.html'), 900)
+  } catch {
+    toast.update(logoutToast, 'error', 'Logout failed. Redirecting anyway...')
+    setTimeout(() => (window.location.href = 'login.html'), 1000)
+  }
 }
