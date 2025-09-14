@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - PhotoMoments</title>
     <link rel="stylesheet" href="css/main.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/pages/auth.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="auth-container">
@@ -32,7 +35,11 @@
                 </div>
                 <button type="submit" class="auth-button" id="loginButton">
                     <span class="button-text">Sign In</span>
-                    <span class="button-loading hidden">Signing in...</span>
+                    <span class="button-loading hidden">
+                        <div class="loader">
+                            
+                        </div>
+                        Signing in...</span>
                 </button>
             </form>
             
