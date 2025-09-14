@@ -12,7 +12,7 @@
 .Toastify__toast {
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-family: var(--font-family);
     font-size: 14px;
     padding: 16px 20px;
     margin-bottom: 12px;
@@ -90,6 +90,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    float: right;
 }
 
 .Toastify__close-button:hover {
@@ -150,7 +151,8 @@
 /* Mobile Responsive */
 @media (max-width: 480px) {
     .Toastify__toast-container {
-        width: 100vw;
+        min-width: 90vh;
+        width: 100%;
         padding: 0 12px;
         left: 0;
         right: 0;
