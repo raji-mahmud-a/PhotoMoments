@@ -24,19 +24,19 @@ async function checkAuthenticationAndInit() {
         const { data: { session } } = await supabase.auth.getSession()
         
         if (!session?.user) {
-            console.log('No user session, redirecting to login...')
+            alert('index page No user session, redirecting to login...')
             window.location.href = 'login.html'
             return
         }
         
-        console.log('User authenticated:', session.user.email)
+        alert('User authenticated:', session.user.email)
         currentUser = session.user
         
         // Initialize the app
         initializeGalleryApp()
         
     } catch (error) {
-        console.error('Auth check error:', error)
+        alert('Auth check error:', error)
         window.location.href = 'login.html'
     }
 }
